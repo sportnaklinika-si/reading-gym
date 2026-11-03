@@ -5,9 +5,11 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&a
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const today = () => RG.dayKey(Date.now());
 const CHECK_MS = 45 * 60e3, ANSWER_MS = 3 * 60e3, BEAT_MS = 15e3, MIN_SAVE = 60;
-const DEMO = location.hash.startsWith('#demo');   // example data for screenshots (#demo, #demo-stats, #demo-reader), never saved
+const HASH = location.hash.split('&')[0], DEMO = HASH.startsWith('#demo');   // example data for screenshots (#demo, #demo-stats, #demo-reader), never saved
+// Demo only: "#demo&theme=A" shows one of the colour looks Jan is choosing from (test/themes.js overrides the theme block); the app itself never loads it.
+if (DEMO && /&theme=[A-Z]/.test(location.hash)) { const s = document.createElement('script'); s.src = 'test/themes.js'; document.head.append(s); }
 
-let S = null, view = DEMO && /stats|books/.test(location.hash) ? location.hash.slice(6) : 'today', calMonth = null, installEvt = null, ask = null, tickT = null, pendingCover = null, pendingImport = null;
+let S = null, view = DEMO && /stats|books/.test(HASH) ? HASH.slice(6) : 'today', calMonth = null, installEvt = null, ask = null, tickT = null, pendingCover = null, pendingImport = null;
 const covers = {};   // book id -> object URL of the cover photo
 
 // ---------- storage: IndexedDB on the phone, localStorage only if that fails (names unchanged since Reading Gym, so old data keeps working)
@@ -260,7 +262,7 @@ function vToday() {
   const reading = S.books.filter(b => b.status === 'reading'), BT = RG.bookTotals(S.sessions);
   const left = L.next != null ? L.next * 3600 - tot : 0, toMark = RG.MARK_EVERY - st.earn;
   const week = Array.from({ length: 7 }, (_, i) => RG.addDays(t, i - 6));
-  const fresh = DEMO ? location.hash === '#demo-new' : seenLvl() != null && L.i > seenLvl();
+  const fresh = DEMO ? HASH === '#demo-new' : seenLvl() != null && L.i > seenLvl();
   return `${DEMO ? '<p class="demo">Vzorčni podatki, nič se ne shrani</p>' : ''}${installCard()}
   <button class="lvl" data-act="tab" data-tab="stats" data-to="ladder" aria-label="${esc(L.name)}, stopnja ${L.i + 1} od ${RG.LEVELS.length}. Odpri pot do razsvetljenja.">
     <span class="kid-wrap${fresh ? ' glow-new' : ''}">${KID(L.i, 132, false, true)}</span>
@@ -558,19 +560,21 @@ function demoState() {
 
 (async () => {
   await load();
-  if (DEMO && location.hash === '#demo-reader') { const now = Date.now(); S.run = { id: 'dr', book: 'd2', segs: [], at: now - 431e3, ok: now, beat: now, why: null }; }
-  if (DEMO && location.hash === '#demo-paused') { const now = Date.now(); S.run = { id: 'dr', book: 'd2', segs: [[now - 1500e3, now - 300e3]], at: null, ok: now, beat: now, why: 'left' }; }
+  if (DEMO && HASH === '#demo-reader') { const now = Date.now(); S.run = { id: 'dr', book: 'd2', segs: [], at: now - 431e3, ok: now, beat: now, why: null }; }
+  if (DEMO && HASH === '#demo-paused') { const now = Date.now(); S.run = { id: 'dr', book: 'd2', segs: [[now - 1500e3, now - 300e3]], at: null, ok: now, beat: now, why: 'left' }; }
   render();
   if (S.run) showReader();
-  if (DEMO && location.hash === '#demo-detail') sheetDetail('d1');
-  if (DEMO && location.hash === '#demo-add') sheetBook();
-  if (DEMO && location.hash === '#demo-level') levelUp(6);
-  if (DEMO && location.hash === '#demo-finished') setStatus('d1', 'finished');
-  if (DEMO && location.hash === '#demo-levels') $('#view').innerHTML = `<div class="roster" style="grid-template-columns:repeat(3,minmax(0,1fr))">${RG.LEVELS.map((x, i) => `<div class="cell">${KID(i, 112)}<b>${esc(x[1])}</b><small>${x[0]} h</small></div>`).join('')}</div><div class="roster" style="grid-template-columns:repeat(3,minmax(0,1fr))">${[3, 9, 16].map(i => `<div class="cell locked">${KID(i, 112, true)}<b>${esc(RG.LEVELS[i][1])}</b><small>zaklenjeno</small></div>`).join('')}</div>`;
+  if (DEMO && HASH === '#demo-detail') sheetDetail('d1');
+  if (DEMO && HASH === '#demo-add') sheetBook();
+  if (DEMO && HASH === '#demo-level') levelUp(6);
+  if (DEMO && HASH === '#demo-finished') setStatus('d1', 'finished');
+  if (DEMO && HASH === '#demo-levels') $('#view').innerHTML = `<div class="roster" style="grid-template-columns:repeat(3,minmax(0,1fr))">${RG.LEVELS.map((x, i) => `<div class="cell">${KID(i, 112)}<b>${esc(x[1])}</b><small>${x[0]} h</small></div>`).join('')}</div><div class="roster" style="grid-template-columns:repeat(3,minmax(0,1fr))">${[3, 9, 16].map(i => `<div class="cell locked">${KID(i, 112, true)}<b>${esc(RG.LEVELS[i][1])}</b><small>zaklenjeno</small></div>`).join('')}</div>`;
   // last month's numbers and calendar (a full month of example data)
-  if (DEMO && location.hash === '#demo-month') { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 1); calMonth = [d.getFullYear(), d.getMonth()]; view = 'stats'; render(); document.querySelector('[aria-label="Mesec"]').scrollIntoView(); }
+  if (DEMO && HASH === '#demo-month') { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 1); calMonth = [d.getFullYear(), d.getMonth()]; view = 'stats'; render();
+    // scroll again once web fonts (demo themes) have settled, with a little room above the month
+    const go = () => { document.querySelector('[aria-label="Mesec"]').scrollIntoView(); window.scrollBy(0, -14); }; go(); setTimeout(go, 1500); setTimeout(go, 3500); }
   // levels 1, 4, 7, 10, 13, 16 and 18 side by side, for judging the character as it grows up
-  if (DEMO && location.hash === '#demo-ages') { document.body.style.background = 'var(--bg)'; document.body.innerHTML = `<div style="display:flex; gap:18px; padding:20px">${[0, 3, 6, 9, 12, 15, 17].map(i => `<figure style="margin:0; display:grid; gap:6px; justify-items:center; font:600 14px var(--font)">${KID(i, 210)}<b style="font:700 15px var(--display)">${esc(RG.LEVELS[i][1])}</b><span style="color:var(--muted)">${RG.LEVELS[i][0]} h</span></figure>`).join('')}</div>`; }
+  if (DEMO && HASH === '#demo-ages') { document.body.style.background = 'var(--bg)'; document.body.innerHTML = `<div style="display:flex; gap:18px; padding:20px">${[0, 3, 6, 9, 12, 15, 17].map(i => `<figure style="margin:0; display:grid; gap:6px; justify-items:center; font:600 14px var(--font)">${KID(i, 210)}<b style="font:700 15px var(--display)">${esc(RG.LEVELS[i][1])}</b><span style="color:var(--muted)">${RG.LEVELS[i][0]} h</span></figure>`).join('')}</div>`; }
   let day = today();
   setInterval(() => { if (today() !== day) { day = today(); render(); } }, 60e3);
   if (!DEMO && 'serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});

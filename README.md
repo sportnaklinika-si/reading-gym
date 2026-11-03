@@ -11,4 +11,5 @@ It is a web app: open it once on the phone and add it to the home screen. All da
 - `sw.js`, `manifest.webmanifest`, `icons/`: what makes it installable and work offline (`icons/make-icons.sh` redraws the icons from `icons/icon.svg`)
 - `fonts/rubik-bold.woff2`: the display font, a subset of Rubik Bold with the Slovene letters (SIL Open Font License, see `fonts/OFL.txt`)
 - `DESIGN.md`: the design system and its rules; `PRODUCT.md`: who the app is for
+- Demo colour looks (not part of the app): add `&theme=A` (B, C, D; N = the neutral placeholder) to any demo hash; `test/themes.js` overrides the theme block and `test/shoot-themes.sh` screenshots Today and the month view of each.
 - `index.html#demo`, `#demo-books`, `#demo-stats`, `#demo-month`, `#demo-reader`, `#demo-paused`, `#demo-detail`, `#demo-add`, `#demo-level`, `#demo-finished`, `#demo-new`, `#demo-levels`, `#demo-ages`: example data for checking the screens, never saved; `test/shoot.sh` screenshots them

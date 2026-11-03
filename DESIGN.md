@@ -156,7 +156,7 @@ Restrained: a paper ground, ink text, one accent and three meaning colours.
 
 ## Layout
 
-Single column, max 560px, 20px gutters respecting the safe areas (viewport-fit=cover). Sections stack with a 26px gap (`--space`), each opened by one hairline and 26px of air. The bottom tab bar (Danes, Knjige, Napredek) is translucent paper with a hairline top and its three items held to the column width. Sheets rise from the bottom with a grab handle. The level roster is two columns; the finished-book wall three.
+Single column, max 560px, 20px gutters respecting the safe areas (viewport-fit=cover). Theme hooks: `--bg-paint` (a gradient ground), `--panel-*` (open sections by default; a theme can make them soft panels with a radius and padding), `--sec-pt`, `--space`, `--display-w`, `--num` and `--num-w` (a separate face and weight for numerals). Sections stack with a 26px gap (`--space`), each opened by one hairline and 26px of air. The bottom tab bar (Danes, Knjige, Napredek) is translucent paper with a hairline top and its three items held to the column width. Sheets rise from the bottom with a grab handle. The level roster is two columns; the finished-book wall three.
 
 ## Elevation & Depth
 

@@ -50,9 +50,12 @@
   --stamp-tilt:0; --stamp-mask:none;
   /* type and shape */
   --font:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-  --display:"Rubik Plate", "SF Pro Rounded", ui-rounded, -apple-system, "Segoe UI", sans-serif;
+  --display:"Rubik Plate", "SF Pro Rounded", ui-rounded, -apple-system, "Segoe UI", sans-serif; --display-w:700;
+  --num:var(--display); --num-w:700;   /* numerals: minutes, streak, records, clock */
   --r-sm:10px; --r-md:14px; --r-lg:20px; --r-pill:999px;
   --space:26px;
+  /* surfaces: sections are open by default (space and one hairline); a theme can turn them into soft panels */
+  --bg-paint:var(--bg); --panel-bg:transparent; --panel-r:0; --panel-pt:var(--space); --panel-px:0; --panel-pb:0; --panel-rule:1px solid var(--line); --sec-pt:var(--space);
   --ease:cubic-bezier(.16,1,.3,1);
   color-scheme:light;
 }
@@ -60,7 +63,7 @@
 :root{--top:env(safe-area-inset-top, 0px); --bot:env(safe-area-inset-bottom, 0px)}
 *{box-sizing:border-box}
 html{scrollbar-color:var(--line) transparent}
-html,body{margin:0; background:var(--bg); color:var(--fg); font:16px/1.45 var(--font); -webkit-text-size-adjust:100%; -webkit-tap-highlight-color:transparent}
+html,body{margin:0; background:var(--bg-paint); color:var(--fg); font:16px/1.45 var(--font); -webkit-text-size-adjust:100%; -webkit-tap-highlight-color:transparent}
 body{min-height:100vh; min-height:100dvh; caret-color:var(--accent)}
 /* keeps scrolled content from running into the clock and battery in the status bar */
 body::before{content:""; position:fixed; left:0; right:0; top:0; height:calc(var(--top) + 12px); background:var(--bg); opacity:.94; z-index:15; pointer-events:none}
@@ -70,7 +73,7 @@ button{cursor:pointer; touch-action:manipulation}
 button:disabled{cursor:default; opacity:.35}
 :focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:6px}
 h1,h2,h3,p{margin:0}
-h1,h2{font-family:var(--display); font-weight:700; line-height:1.15; letter-spacing:-.01em; text-wrap:balance}
+h1,h2{font-family:var(--display); font-weight:var(--display-w); line-height:1.15; letter-spacing:-.01em; text-wrap:balance}
 h3{font-size:1rem; font-weight:650; line-height:1.25}
 .muted{color:var(--muted)}
 .num{font-variant-numeric:tabular-nums}
@@ -79,8 +82,8 @@ h3{font-size:1rem; font-weight:650; line-height:1.25}
 
 /* airy single column: sections are separated by space and one hairline, not boxes */
 main{max-width:560px; margin:0 auto; padding:calc(var(--top) + 28px) max(20px, env(safe-area-inset-right, 0px)) calc(var(--bot) + 110px) max(20px, env(safe-area-inset-left, 0px)); display:grid; gap:var(--space)}
-.panel{border-top:1px solid var(--line); padding-top:var(--space)}
-.sec{display:flex; align-items:baseline; gap:8px; font-family:var(--display); font-weight:700; font-size:1.12rem; border-top:1px solid var(--line); padding-top:var(--space); margin-bottom:-10px}
+.panel{background:var(--panel-bg); border-radius:var(--panel-r); border-top:var(--panel-rule); padding:var(--panel-pt) var(--panel-px) var(--panel-pb)}
+.sec{display:flex; align-items:baseline; gap:8px; font-family:var(--display); font-weight:var(--display-w); font-size:1.12rem; border-top:var(--panel-rule); padding-top:var(--sec-pt); margin-bottom:-10px}
 .sec span{font-family:var(--font); font-weight:500; font-size:.9rem; color:var(--muted)}
 .title{font-size:1.9rem; margin-bottom:-8px}
 .lede{color:var(--muted); font-size:.95rem}
@@ -150,7 +153,7 @@ main{max-width:560px; margin:0 auto; padding:calc(var(--top) + 28px) max(20px, e
 .today p b{color:var(--fg); font-weight:600}
 .ring .trk{fill:none; stroke:var(--surface2); stroke-width:4}
 .ring .arc{fill:none; stroke:var(--accent); stroke-width:4; stroke-linecap:round; transition:stroke-dashoffset .8s var(--ease)}
-.ring .num1{fill:var(--fg); font:700 20px var(--display)}
+.ring .num1{fill:var(--fg); font:var(--num-w) 20px var(--num)}
 .ring .u{fill:var(--muted); font:600 8.5px var(--font)}
 .ring.done .arc{stroke:var(--good)}
 .ring .tickdisc{transform-origin:32px 32px; animation:press .8s var(--ease) both}
@@ -158,15 +161,15 @@ main{max-width:560px; margin:0 auto; padding:calc(var(--top) + 28px) max(20px, e
 /* streak: one slot per day like a due-date card; a goal day is stamped with its date */
 .streak{position:relative}
 .streak-top{display:flex; align-items:baseline; gap:8px; padding-right:84px}
-.streak-top b{font:700 2.4rem/1 var(--display); font-variant-numeric:tabular-nums}
+.streak-top b{font:var(--num-w) 2.4rem/1 var(--num); font-variant-numeric:tabular-nums}
 .streak-top span{font-weight:600}
-.marks{position:absolute; top:calc(var(--space) - 1px); right:0; display:flex; gap:7px}
+.marks{position:absolute; top:calc(var(--panel-pt) - 1px); right:var(--panel-px); display:flex; gap:7px}
 .marks svg{width:16px; height:36px; display:block}
 .hint{font-size:.85rem; color:var(--muted); margin-top:8px; max-width:46ch}
 .week{display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-top:18px}
 .wd{display:grid; justify-items:center; gap:7px; font-size:.75rem; color:var(--muted)}
 .wd.is-today{color:var(--fg); font-weight:700}
-.slot{display:grid; place-items:center; width:42px; height:32px; font:700 .72rem/1 var(--display); font-variant-numeric:tabular-nums; border-radius:var(--r-sm)}
+.slot{display:grid; place-items:center; width:42px; height:32px; font:var(--num-w) .72rem/1 var(--num); font-variant-numeric:tabular-nums; border-radius:var(--r-sm)}
 .slot.blank{color:var(--faint); border-bottom:1.5px dashed var(--line); border-radius:0}
 .slot.open{color:var(--accent); box-shadow:inset 0 0 0 1.5px var(--accent)}
 .stamp{color:var(--good); background:var(--good-soft); transform:rotate(calc(var(--r, 0deg) * var(--stamp-tilt))); -webkit-mask:var(--stamp-mask) center/100% 100%; mask:var(--stamp-mask) center/100% 100%}
@@ -211,12 +214,12 @@ main{max-width:560px; margin:0 auto; padding:calc(var(--top) + 28px) max(20px, e
 .rec:first-child{padding-top:0}
 .rec:last-child{border-bottom:0; padding-bottom:0}
 .rec span{color:var(--muted); display:flex; align-items:center; gap:8px}
-.rec b{font:700 1.25rem var(--display); font-variant-numeric:tabular-nums; white-space:nowrap}
+.rec b{font:var(--num-w) 1.25rem var(--num); font-variant-numeric:tabular-nums; white-space:nowrap}
 .head{display:flex; align-items:baseline; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:12px}
 .head h2{font-size:1.15rem}
 .chart svg{width:100%; height:auto; display:block}
 .chart text{fill:var(--muted); font:600 11px var(--font)}
-.chart .v{fill:var(--fg); font:700 12px var(--display)}
+.chart .v{fill:var(--fg); font:var(--num-w) 12px var(--num)}
 .chart .g{fill:var(--accent); font:600 11px var(--font)}
 .cal-head{display:grid; grid-template-columns:44px 1fr 44px; align-items:center; text-align:center; margin-bottom:12px}
 .cal-head h2{font-size:1.1rem}
@@ -225,7 +228,7 @@ main{max-width:560px; margin:0 auto; padding:calc(var(--top) + 28px) max(20px, e
 .cal .h{font-size:.75rem; color:var(--muted); padding-bottom:4px}
 .cal .c{position:relative; aspect-ratio:1; border-radius:var(--r-sm); display:grid; place-items:center; font-size:.85rem; font-variant-numeric:tabular-nums; color:var(--muted); max-width:42px; width:100%; justify-self:center}
 .cal .c i{position:absolute; left:50%; bottom:9%; transform:translateX(-50%); border-radius:50%; background:var(--under)}
-.cal .c.tick{color:var(--good); background:var(--good-soft); font:700 .85rem var(--display); transform:rotate(calc(var(--r, 0deg) * var(--stamp-tilt))) scale(.88)}
+.cal .c.tick{color:var(--good); background:var(--good-soft); font:var(--num-w) .85rem var(--num); transform:rotate(calc(var(--r, 0deg) * var(--stamp-tilt))) scale(.88)}
 .cal .c.saved{color:var(--mark); background:var(--mark-soft); transform:rotate(calc(var(--r, 0deg) * var(--stamp-tilt))) scale(.88)}
 .cal .c.saved svg{position:absolute; top:-3px; right:3px; width:7px; height:12px}
 .cal .c.miss{color:var(--faint)}
@@ -234,7 +237,7 @@ main{max-width:560px; margin:0 auto; padding:calc(var(--top) + 28px) max(20px, e
 .month{display:grid; grid-template-columns:1fr 1fr; gap:0 18px; margin:2px 0 18px}
 .month div{display:flex; align-items:baseline; justify-content:space-between; gap:8px; padding:9px 0; border-bottom:1px solid var(--line)}
 .month span{font-size:.82rem; color:var(--muted)}
-.month b{font:700 1.02rem var(--display); font-variant-numeric:tabular-nums; white-space:nowrap}
+.month b{font:var(--num-w) 1.02rem var(--num); font-variant-numeric:tabular-nums; white-space:nowrap}
 .cal .c.zero{color:var(--faint)}
 .cal .c.zero::after{content:""; position:absolute; left:34%; right:34%; bottom:14%; height:1.5px; border-radius:2px; background:var(--line)}
 .legend{display:flex; flex-wrap:wrap; gap:8px 16px; font-size:.78rem; color:var(--muted); margin-top:14px}
@@ -256,7 +259,7 @@ main{max-width:560px; margin:0 auto; padding:calc(var(--top) + 28px) max(20px, e
 .cell.locked b{color:var(--faint)}
 .goal{display:grid; grid-template-columns:52px minmax(0,1fr) 52px; gap:10px; align-items:center; text-align:center}
 .goal button{height:52px; border-radius:var(--r-md); border:1px solid var(--line); background:none; display:grid; place-items:center}
-.goal b{font:700 2rem var(--display)}
+.goal b{font:var(--num-w) 2rem var(--num)}
 .row{display:flex; gap:10px; align-items:center; justify-content:space-between}
 
 /* tab bar */
@@ -283,7 +286,7 @@ main{max-width:560px; margin:0 auto; padding:calc(var(--top) + 28px) max(20px, e
 .facts div:nth-child(odd){border-right:1px solid var(--line); padding-right:10px}
 .facts div:nth-child(even){padding-left:12px}
 .facts dt{font-size:.75rem; color:var(--muted)}
-.facts dd{margin:2px 0 0; font:700 1.02rem var(--display); font-variant-numeric:tabular-nums}
+.facts dd{margin:2px 0 0; font:var(--num-w) 1.02rem var(--num); font-variant-numeric:tabular-nums}
 .danger-zone{display:grid; border-top:1px solid var(--line); margin-top:8px; padding-top:8px}
 
 /* reading screen: near black so the screen can stay on beside the book */
@@ -301,7 +304,7 @@ main{max-width:560px; margin:0 auto; padding:calc(var(--top) + 28px) max(20px, e
 .rd-ring .arc{fill:none; stroke:var(--reader-ring); stroke-width:3; stroke-linecap:round; transition:stroke-dashoffset 1s linear}
 .rd-ring .arc.done{stroke:var(--reader-done)}
 .rd-mid{position:absolute; inset:0; display:grid; place-content:center; gap:6px}
-.rd-mid b{font:700 clamp(2.9rem, 15vw, 4.4rem)/1 var(--display); color:var(--reader-fg); font-variant-numeric:tabular-nums; letter-spacing:-.01em}
+.rd-mid b{font:var(--num-w) clamp(2.9rem, 15vw, 4.4rem)/1 var(--num); color:var(--reader-fg); font-variant-numeric:tabular-nums; letter-spacing:-.01em}
 .rd-mid span{font-size:.85rem; color:var(--reader-muted)}
 .rd-today{font-size:.95rem; display:inline-flex; align-items:center; gap:8px}
 .rd-today.done{color:var(--reader-done)}
