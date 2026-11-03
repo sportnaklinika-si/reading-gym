@@ -11,6 +11,7 @@ const HASH = location.hash.split('&')[0], DEMO = HASH.startsWith('#demo');   // 
 if (DEMO && /&theme=[A-Z]/.test(location.hash)) { const s = document.createElement('script'); s.src = 'test/themes.js'; document.head.append(s); }
 
 let S = null, view = DEMO && /stats|books/.test(HASH) ? HASH.slice(6) : 'today', calMonth = null, installEvt = null, ask = null, tickT = null, pendingCover = null, pendingImport = null;
+let swReg = null, reloadAfterRun = false;   // a new version arrived while the timer ran: switch to it once the reading is saved
 const covers = {};   // book id -> object URL of the cover photo
 
 // ---------- storage: IndexedDB on the phone, localStorage only if that fails (names unchanged since Reading Gym, so old data keeps working)
@@ -79,10 +80,11 @@ const stampDate = k => { const d = RG.keyDate(k); return d.getDate() + '.' + (d.
 const tilt = k => ((Number(k.slice(8)) * 37 + Number(k.slice(5, 7)) * 11) % 9) - 4;   // every stamp lands a little crooked, the same way each time
 const vibrate = p => { try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} };
 
-// ---------- the timer. By default the phone stays awake (wake lock), the reading screen turns black after a few seconds without
-// a touch, and leaving the app pauses the timer. Optional (S.countOff, off unless chosen): keep counting with the screen locked,
-// from timestamps since the page itself is asleep then; it can't tell a locked screen from another app, so it asks on return.
-const countOff = () => S.countOff === true;   // older states and backups have no field: off
+// ---------- the timer. By default (Jan, 3. 11.: locking the phone by hand or automatically must not stop the timer) it keeps
+// counting with the screen locked, from timestamps since the page itself is asleep then; it can't tell a locked screen from
+// another app, so it asks on return. Switched off (S.countOff === false): the phone stays awake, the reading screen turns black
+// after a few seconds without a touch, and leaving the app pauses the timer.
+const countOff = () => S.countOff !== false;   // older states and backups have no field: on
 const BLACK_MS = 8e3;
 let touchAt = 0;   // last touch on the reading screen
 let lock = null;
@@ -216,8 +218,9 @@ function paintReader() {
 }
 document.addEventListener('visibilitychange', () => {
   if (!S) return;
+  if (reloadAfterRun && !S.run) return location.reload();
   if (document.visibilityState === 'hidden') outOfSight();
-  else { render(); if (S.run) { showReader(); backInSight(); } }
+  else { render(); if (S.run) { showReader(); backInSight(); } if (swReg) swReg.update().catch(() => {}); }
 });
 window.addEventListener('pagehide', () => { if (S) outOfSight(); });
 // a touch on the reading screen keeps it lit a few seconds longer; on the black layer the tap only brings the controls back ("unblack")
@@ -650,6 +653,12 @@ function demoState() {
   if (DEMO && HASH === '#demo-ages') { document.body.style.background = 'var(--bg)'; document.body.innerHTML = `<div style="display:flex; gap:18px; padding:20px">${[0, 3, 6, 9, 12, 15, 17].map(i => `<figure style="margin:0; display:grid; gap:6px; justify-items:center; font:600 14px var(--font)">${KID(i, 210)}<b style="font:var(--display-w) 15px var(--display)">${esc(RG.LEVELS[i][1])}</b><span style="color:var(--muted)">${RG.LEVELS[i][0]} h</span></figure>`).join('')}</div>`; }
   let day = today();
   setInterval(() => { if (today() !== day) { day = today(); render(); } }, 60e3);
-  if (!DEMO && 'serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+  // updates: look for a new version every time the app comes back to the screen (a home-screen app often resumes without
+  // reloading) and switch to it at once, unless the timer is running; then right after the reading is saved or thrown away
+  if (!DEMO && 'serviceWorker' in navigator && location.protocol === 'https:') {
+    const hadCtrl = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener('controllerchange', () => { if (!hadCtrl) return; if (S && S.run) reloadAfterRun = true; else location.reload(); });
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(r => { swReg = r; }).catch(() => {});
+  }
   if (!DEMO && navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 })();
