@@ -12,16 +12,16 @@ web
 One person: Jan, owner of a sports clinic (kinesiologist) in Slovenia, who wants to read more paper books. Jan opens the app on a phone, presses start when the book opens, and puts the phone down beside the book. Often in the evening at home (inferred).
 
 ## Product Purpose
-Time real reading and make it a habit. The timer only counts while the app is on screen; leaving the app or locking the phone pauses it. A daily goal fills the day; stats and a level roster show progress. Success: Jan keeps reading most days and enjoys opening the app.
+Time real reading and make it a habit. By default the timer counts while the app is on screen; leaving the app or locking the phone pauses it. Jan (3 Nov 2026) wants to put the phone down while reading, but not to count time spent in other apps, so the phone stays awake and the reading screen turns black instead. A setting (off by default) counts with the screen locked too; a web app can't tell a locked screen from another app, so it says so and asks on return. A daily goal fills the day; stats and a level roster show progress. Success: Jan keeps reading most days and enjoys opening the app.
 
 ## Positioning
 Bralni mentor ("reading mentor"): the reader grows up across 18 levels, from a toddler with a picture book to a wise old reader with a soft glow, while the room around them fills in (shelf, window, lamp, plants, a whole library, then light). Two running jokes: a cat that grows old alongside and keeps sitting on the book, and one favourite red picture book that comes back at the end. The streak forgives: goal days earn bookmarks, and a bookmark saves the streak on a missed day.
 
 ## Operating Context
-Installed to the phone's home screen as a web app (iPhone Safari or Android Chrome). Paper books, so the phone is only the timer and logbook. While a session runs the screen is kept on, near black. Several books can be in progress at once; each keeps its own time and history.
+Installed to the phone's home screen as a web app (iPhone Safari or Android Chrome). Paper books, so the phone is only the timer and logbook. While a session runs the phone stays awake and after 8 seconds without a touch the screen is pure black (on OLED as good as off), with the time barely visible. Several books can be in progress at once; each keeps its own time and history.
 
 ## Capabilities and Constraints
-- Timer with pause on leave, "Še bereš?" check after 45 min, sessions under a minute not saved, time by hand for untimed reading.
+- Timer with pause on leave and a black screen while reading, "Še bereš?" check after 45 min, optional counting with the screen locked (return question after more than 20 minutes away: count all, or only until the screen went off; after more than 4 hours the latter is proposed), sessions under a minute not saved, time by hand for untimed reading.
 - Books: cover photo or title, author optional, statuses reading / finished / put aside, history with dates.
 - Daily goal 5 to 180 min (default 20); streak with up to 3 bookmarks (1 per 7 goal days).
 - Monthly view in Napredek (Jan, 3 Nov 2026): per month the reading days, total time, goal days, the best streak and a calendar showing days with and without reading, with arrows between months.

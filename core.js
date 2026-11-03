@@ -73,6 +73,18 @@
     return out;
   }
 
+  // The timer can keep counting while the screen is off. A web app doesn't run then, so the running part is only its start time and
+  // the clock catches up from timestamps. Back after more than 20 minutes out of sight, the reader is asked how much counts;
+  // after more than 4 hours the proposal is "only until the screen went off".
+  const AWAY_ASK = 20 * 60e3, AWAY_LONG = 4 * 3600e3;
+  function away(hid, back) { const ms = Math.max(0, back - hid); return { ms, ask: ms > AWAY_ASK, long: ms > AWAY_LONG }; }
+  // The segments that count when the answer is given: 'all' runs the open part on to now, 'until' ends it where the app went out of sight.
+  // at = start of the open part, hid = when the app went out of sight.
+  function settle(segs, at, hid, now, choice) {
+    const end = choice === 'until' ? Math.min(hid, now) : now;
+    return at && end > at ? segs.concat([[at, end]]) : segs.slice();
+  }
+
   function bookTotals(sessions) {
     const t = {};
     for (const s of sessions) {
@@ -92,6 +104,6 @@
     return m;
   }
 
-  const RG = { LEVELS, MARK_EVERY, MARK_MAX, dayKey, keyDate, addDays, goalFor, dayTotals, streak, level, splitByDay, bookTotals, longestRun };
+  const RG = { LEVELS, MARK_EVERY, MARK_MAX, AWAY_ASK, AWAY_LONG, dayKey, keyDate, addDays, goalFor, dayTotals, streak, level, splitByDay, away, settle, bookTotals, longestRun };
   if (typeof module !== 'undefined' && module.exports) module.exports = RG; else root.RG = RG;
 })(this);

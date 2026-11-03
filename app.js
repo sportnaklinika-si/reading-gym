@@ -36,9 +36,14 @@ async function load() {
   if (DEMO) s = demoState();
   else { try { s = await idb.get('state'); } catch (e) { try { s = JSON.parse(lsGet('rg-state')); } catch (e2) {} } }
   S = Object.assign(fresh(), s || {});
-  // The app was closed while the timer ran: keep the time up to the last moment it was seen running.
+  // The app was closed while the timer ran (a phone may close it while the screen is locked). Counting with the screen locked,
+  // the run goes on from its start time and the return question asks how much counts; otherwise it keeps the time up to
+  // the last moment it was seen running.
   const r = S.run;
-  if (r && r.at) { if (r.beat > r.at) r.segs.push([r.at, r.beat]); r.at = null; r.why = 'closed'; }
+  if (r && r.at) {
+    if (countOff()) { if (!r.hid) r.hid = Math.max(r.at, r.beat); }
+    else { if (r.beat > r.at) r.segs.push([r.at, r.beat]); r.at = null; r.why = 'closed'; }
+  }
   if (!DEMO) for (const b of S.books) if (b.cover) loadCover(b.id);
 }
 async function loadCover(id) {
@@ -74,9 +79,15 @@ const stampDate = k => { const d = RG.keyDate(k); return d.getDate() + '.' + (d.
 const tilt = k => ((Number(k.slice(8)) * 37 + Number(k.slice(5, 7)) * 11) % 9) - 4;   // every stamp lands a little crooked, the same way each time
 const vibrate = p => { try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} };
 
-// ---------- the timer. It only runs while the app is on screen.
+// ---------- the timer. By default the phone stays awake (wake lock), the reading screen turns black after a few seconds without
+// a touch, and leaving the app pauses the timer. Optional (S.countOff, off unless chosen): keep counting with the screen locked,
+// from timestamps since the page itself is asleep then; it can't tell a locked screen from another app, so it asks on return.
+const countOff = () => S.countOff === true;   // older states and backups have no field: off
+const BLACK_MS = 8e3;
+let touchAt = 0;   // last touch on the reading screen
 let lock = null;
 async function wake(on) {
+  on = on && !countOff();   // counting with the screen off, the screen may sleep: it saves the battery
   try {
     if (on && !lock && 'wakeLock' in navigator && document.visibilityState === 'visible') {
       lock = await navigator.wakeLock.request('screen');
@@ -90,7 +101,7 @@ function startRun(bookId) {
   if (S.run) return showReader();
   const now = Date.now();
   S.run = { id: uid(), book: bookId, segs: [], at: now, ok: now, beat: now, why: null };
-  save(); wake(true); showReader();
+  touchAt = now; save(); wake(true); showReader();
 }
 // While "Še bereš?" is open, time after the question never counts.
 function pauseRun(why, end) {
@@ -102,7 +113,7 @@ function pauseRun(why, end) {
 }
 function resumeRun() {
   const r = S.run; if (!r) return;
-  r.at = r.ok = r.beat = Date.now(); r.why = null;
+  r.at = r.ok = r.beat = touchAt = Date.now(); r.why = null;
   save(); wake(true); paintReader();
 }
 function finishRun() {
@@ -116,19 +127,45 @@ function finishRun() {
 }
 function discardRun() { S.run = null; ask = null; save(); wake(false); hideReader(); render(); toast('Branje je zavrženo.'); }
 
+// Out of sight (screen locked or another app, a page can't tell which). Counting with the screen locked, the run keeps its start time
+// and notes when it went; otherwise it pauses.
+// An open "Še bereš?" counts from the moment it was asked.
+function outOfSight() {
+  const r = S.run; if (!r || !r.at) return;
+  if (!countOff()) return pauseRun('left');
+  if (!r.hid) r.hid = ask || Date.now();
+  ask = null; save();
+}
+// Back on screen: up to 20 minutes away just goes on; longer, the return question asks how much counts (r.back = when it came back).
+function backInSight() {
+  const r = S.run; if (!r || !r.at || !r.hid) return;
+  const now = Date.now();
+  if (r.back || RG.away(r.hid, now).ask) r.back = now; else r.hid = null;
+  r.ok = now; ask = null; save(); paintReader();
+}
+function settleBack(choice) {
+  const r = S.run; if (!r || !r.back) return;
+  const now = Date.now();
+  if (choice === 'until') { r.segs = RG.settle(r.segs, r.at, r.hid, now, 'until'); r.at = null; r.why = 'dark'; }
+  r.hid = r.back = null; r.ok = now; save(); paintReader();
+}
+
 function tick() {
   const r = S.run; if (!r) return;
   const now = Date.now();
   if (r.at) {
+    if (r.hid && !r.back && document.visibilityState === 'visible') backInSight();
     if (now - r.beat >= BEAT_MS) { r.beat = now; save(); }
-    if (!ask && now - r.ok >= CHECK_MS) { ask = now; vibrate([200, 120, 200]); }
+    // "Še bereš?" only while the app is in sight and no return question is open
+    if (r.hid) ask = null;
+    else if (!ask && now - r.ok >= CHECK_MS) { ask = now; vibrate([200, 120, 200]); }
     else if (ask && now - ask >= ANSWER_MS) pauseRun('asleep', ask);
     const goal = goalNow() * 60;
     if (!r.hit && daySec(today()) + runSec(r) >= goal) { r.hit = true; vibrate(120); }
   }
   paintReader();
 }
-function showReader() { $('#reader').hidden = false; paintReader(); clearInterval(tickT); tickT = setInterval(tick, 1000); }
+function showReader() { $('#reader').hidden = false; touchAt = Date.now(); paintReader(); clearInterval(tickT); tickT = setInterval(tick, 1000); }
 function hideReader() { $('#reader').hidden = true; clearInterval(tickT); tickT = null; }
 const RD_C = 2 * Math.PI * 54;
 const WHY = {
@@ -136,6 +173,7 @@ const WHY = {
   left: 'Premor: aplikacija ni bila več na zaslonu ali pa se je zaslon ugasnil.',
   closed: 'Aplikacija se je zaprla med branjem. Čas do takrat je shranjen.',
   asleep: 'Nihče ni odgovoril, zato se je štoparica ustavila v trenutku vprašanja.',
+  dark: 'Šteto je do trenutka, ko se je zaslon ugasnil.',
 };
 function paintReader() {
   const r = S.run; if (!r || $('#reader').hidden) return;
@@ -154,14 +192,37 @@ function paintReader() {
   let why = WHY[r.why] || WHY.pause;
   if (r.why === 'left' && !('wakeLock' in navigator)) why += ' Če se zaslon ugaša sam, mu v nastavitvah telefona podaljšaj čas do samodejnega zaklepanja.';
   $('#rd-why').textContent = why;
-  $('#rd-ask').hidden = !ask;
+  // black screen: after a few seconds without a touch while the timer runs (never over a question); a tap brings the controls back
+  const dark = !!r.at && !countOff() && !ask && !r.back && Date.now() - touchAt >= BLACK_MS, m = Math.floor(sec / 60);
+  $('#reader').classList.toggle('dark', dark);
+  $('#rd-dim').textContent = fmtMin(sec);
+  $('#rd-dim').style.transform = 'translate(' + ((m % 5) - 2) * 8 + 'px, ' + ((m % 3) - 1) * 8 + 'px)';   // the dim time drifts a little each minute
+  const tip = !countOff() && (DEMO || !lsGet('rg-black-tip'));
+  $('#rd-note').hidden = !r.at || !(tip || countOff());
+  $('#rd-note').textContent = countOff() ? 'Zaslon lahko zakleneš, štoparica šteje naprej.' : 'Zaslon bo počrnel, telefon ostane buden. Če odpreš drugo aplikacijo, se štetje ustavi.';
+  $('#rd-ask').hidden = !ask || !!r.back;
+  // the return question: how long the screen was off, what the clock showed when it went off; after 4 hours "until" is proposed
+  const back = r.at && r.back ? RG.away(r.hid, r.back) : null;
+  $('#rd-back').hidden = !back;
+  if (back) {
+    $('#rd-back-t').textContent = 'Med ugasnjenim zaslonom je minilo ' + fmtMin(back.ms / 1000) + '.';
+    const all = '<button class="btn' + (back.long ? '' : ' primary') + '" data-act="back-all">Da, štej vse</button>';
+    const until = '<button class="btn' + (back.long ? ' primary' : '') + '" data-act="back-until">Štej samo do ugasnitve</button>';
+    const html = back.long ? until + all : all + until;
+    if ($('#rd-back-btns').dataset.html !== html) { $('#rd-back-btns').dataset.html = html; $('#rd-back-btns').innerHTML = html; }
+    const upto = RG.settle(r.segs, r.at, r.hid, r.hid, 'until').reduce((a, g) => a + (g[1] - g[0]), 0) / 1000;
+    $('#rd-back-n').textContent = back.long ? 'Več kot 4 ure je dolgo, zato predlagam samo čas do ugasnitve: ' + fmtMin(upto) + '.' : 'Do ugasnitve je štoparica kazala ' + fmtMin(upto) + '.';
+  }
 }
 document.addEventListener('visibilitychange', () => {
   if (!S) return;
-  if (document.visibilityState === 'hidden') pauseRun('left');
-  else { render(); if (S.run) showReader(); }
+  if (document.visibilityState === 'hidden') outOfSight();
+  else { render(); if (S.run) { showReader(); backInSight(); } }
 });
-window.addEventListener('pagehide', () => { if (S) pauseRun('left'); });
+window.addEventListener('pagehide', () => { if (S) outOfSight(); });
+// a touch on the reading screen keeps it lit a few seconds longer; on the black layer the tap only brings the controls back ("unblack")
+$('#reader').addEventListener('pointerdown', () => { if (!$('#reader').classList.contains('dark')) touchAt = Date.now(); }, true);
+document.addEventListener('keydown', () => { touchAt = Date.now(); if (S && S.run) paintReader(); });
 
 // ---------- rewards
 function snap() { const st = streakNow(); return { lvl: RG.level(totalSec()).i, tick: daySec(today()) >= goalNow() * 60, pr: RG.longestRun(S.sessions), marks: st.marks, cur: st.cur }; }
@@ -355,6 +416,7 @@ function vStats() {
   ${calendar(st)}
   ${roster(L)}
   <section class="panel" style="display:grid; gap:12px"><h2 style="font-size:1.15rem">Dnevni cilj</h2><div class="goal"><button data-act="goal" data-d="-5" aria-label="5 minut manj">${IC.minus}</button><div><b class="num">${goal}</b> <span class="muted">min na dan</span></div><button data-act="goal" data-d="5" aria-label="5 minut več">${IC.plus}</button></div><p class="hint">Nov cilj velja od danes. Prejšnji dnevi obdržijo svoj cilj.</p></section>
+  <section class="panel" style="display:grid; gap:6px" aria-label="Štoparica"><h2 style="font-size:1.15rem">Štoparica</h2><button class="switch" role="switch" aria-checked="${countOff()}" data-act="countoff"><span>Štej tudi, ko je zaslon zaklenjen</span><i></i></button><p class="hint" style="margin-top:0">${countOff() ? 'Šteje tudi čas, ko si v drugih aplikacijah; če te ni več kot 20 minut, te ob vrnitvi vpraša, koliko naj šteje.' : 'Med branjem zaslon počrni in telefon ostane buden. Če ga zakleneš ali odpreš drugo aplikacijo, se štetje ustavi.'}</p></section>
   <section class="panel" style="display:grid; gap:12px"><h2 style="font-size:1.15rem">Varnostna kopija</h2><p class="hint" style="margin-top:0">Vse je shranjeno samo na tem telefonu. Občasno shrani varnostno kopijo, da ti z novim telefonom ne bo treba začeti znova.</p><div class="btns two"><button class="btn" data-act="export">Shrani kopijo</button><button class="btn" data-act="import">Naloži kopijo</button></div><div id="imp" style="display:grid; gap:10px"></div></section>`;
 }
 function render() {
@@ -514,6 +576,10 @@ document.addEventListener('click', e => {
       else { el.classList.add('armed'); el.textContent = 'Tapni še enkrat, da ga zavržeš'; setTimeout(() => { el.classList.remove('armed'); el.textContent = 'Zavrzi to branje'; }, 4000); }
       break;
     case 'still': if (S.run) { S.run.ok = Date.now(); ask = null; save(); paintReader(); } break;
+    case 'unblack': touchAt = Date.now(); if (!DEMO) lsSet('rg-black-tip', '1'); paintReader(); break;
+    case 'back-all': settleBack('all'); break;
+    case 'back-until': settleBack('until'); break;
+    case 'countoff': S.countOff = !countOff(); save(); if (S.run && S.run.at) wake(true); render(); break;
     case 'manual': sheetManual(id); break;
     case 'savemanual': saveManual(id); break;
     case 'finishbook': setStatus(id, 'finished'); break;
@@ -563,8 +629,12 @@ function demoState() {
   await load();
   if (DEMO && HASH === '#demo-reader') { const now = Date.now(); S.run = { id: 'dr', book: 'd2', segs: [], at: now - 431e3, ok: now, beat: now, why: null }; }
   if (DEMO && HASH === '#demo-paused') { const now = Date.now(); S.run = { id: 'dr', book: 'd2', segs: [[now - 1500e3, now - 300e3]], at: null, ok: now, beat: now, why: 'left' }; }
+  // the return question after 1 h 12 min with the screen off (30 min read before), and after 5 h 12 min (a night)
+  if (DEMO && /^#demo-back4?$/.test(HASH)) { const now = Date.now(), off = (HASH === '#demo-back' ? 72 : 312) * 60e3; S.countOff = true; S.run = { id: 'dr', book: 'd2', segs: [], at: now - off - 1800e3, ok: now - off, beat: now - off, hid: now - off, why: null }; }
+  if (DEMO && HASH === '#demo-black') { const now = Date.now(); S.run = { id: 'dr', book: 'd2', segs: [], at: now - 431e3, ok: now, beat: now, why: null }; }
   render();
-  if (S.run) showReader();
+  if (S.run) { showReader(); if (document.visibilityState === 'visible') backInSight(); }
+  if (DEMO && HASH === '#demo-black') { touchAt = 0; paintReader(); }
   if (DEMO && HASH === '#demo-detail') sheetDetail('d1');
   if (DEMO && HASH === '#demo-add') sheetBook();
   if (DEMO && HASH === '#demo-level') levelUp(6);
@@ -574,6 +644,8 @@ function demoState() {
   if (DEMO && HASH === '#demo-month') { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 1); calMonth = [d.getFullYear(), d.getMonth()]; view = 'stats'; render();
     // scroll again once web fonts (demo themes) have settled, with a little room above the month
     const go = () => { document.querySelector('[aria-label="Mesec"]').scrollIntoView(); window.scrollBy(0, -14); }; go(); setTimeout(go, 1500); setTimeout(go, 3500); }
+  // the timer setting in Napredek
+  if (DEMO && HASH === '#demo-timer') { view = 'stats'; render(); const go = () => $('[aria-label="Štoparica"]').scrollIntoView({ block: 'center' }); go(); setTimeout(go, 1500); }
   // levels 1, 4, 7, 10, 13, 16 and 18 side by side, for judging the character as it grows up
   if (DEMO && HASH === '#demo-ages') { document.body.style.background = 'var(--bg)'; document.body.innerHTML = `<div style="display:flex; gap:18px; padding:20px">${[0, 3, 6, 9, 12, 15, 17].map(i => `<figure style="margin:0; display:grid; gap:6px; justify-items:center; font:600 14px var(--font)">${KID(i, 210)}<b style="font:var(--display-w) 15px var(--display)">${esc(RG.LEVELS[i][1])}</b><span style="color:var(--muted)">${RG.LEVELS[i][0]} h</span></figure>`).join('')}</div>`; }
   let day = today();

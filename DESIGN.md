@@ -109,7 +109,7 @@ A reading log that stays out of the way: one column, generous space, sections se
 - Space and hairlines, not cards. Book lists are rows with a bottom hairline.
 - One accent for what you press; three meanings with their own colour: goal reached, bookmarks and records, minutes under the goal.
 - The level illustration is the only picture: a square room with rounded corners, ringed by its tier (bronze, silver, gold), coloured by the --il-* group of the theme.
-- The reading screen is near black in every theme so it can stay on beside the book.
+- The reading screen is near black in every theme so it can stay on beside the book, and turns pure black after 8 seconds without a touch.
 
 ## Colors
 
@@ -188,6 +188,10 @@ Soft and quiet: 8px slots and inputs, 12px buttons, 18px sheet tops and roster c
 
 ### Month view
 - In Napredek: the month name with arrows, four numbers in two columns (Bralni dnevi "29 od 31", Skupaj, Cilj dosežen, Najdaljši niz), then the calendar: goal days filled green, bookmark days in mark, under-goal days with a dot that grows with the minutes, days with no reading marked with a short hairline.
+
+### Reading screen
+- Near black with a dim ring, the clock in the numeral face, Premor and Končano. After 8 seconds without a touch a pure black layer (`--reader-off`) fades in over everything, with only the minutes barely visible (`--reader-off-fg`) and drifting a few pixels each minute; a tap removes it at once and does nothing else. It never covers a question. Under reduced motion it appears without the fade. The first runs show one line under the buttons until the first tap on the black screen: "Zaslon bo počrnel, telefon ostane buden. Če odpreš drugo aplikacijo, se štetje ustavi."
+- With "Štej tudi, ko je zaslon zaklenjen" on (Napredek → Štoparica, an on/off switch): no wake lock and no black layer; after more than 20 minutes away a calm question in the same style as "Še bereš?": the time away, "Si bral ves čas?", "Da, štej vse" and "Štej samo do ugasnitve" (after more than 4 hours the second one is the filled button and the note proposes it).
 
 ### Lists and roster
 - Book rows: cover, title, author, time read, play button, bottom hairline; hover underlines the title.

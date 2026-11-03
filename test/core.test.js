@@ -40,6 +40,29 @@ assert.ok(Math.abs(RG.level(20 * 3600).frac - 0.5) < 1e-9);
 const a = new Date(2026, 2, 1, 23, 50).getTime(), b = new Date(2026, 2, 2, 0, 20).getTime();
 assert.deepStrictEqual(RG.splitByDay([[a, b]]), { '2026-03-01': 600, '2026-03-02': 1200 });
 
+// counting with the screen off: started 20:00, out of sight at 20:30, back at 21:42
+const T = (d, h, m) => new Date(2026, 2, d, h, m).getTime(), sum = segs => segs.reduce((x, g) => x + (g[1] - g[0]), 0) / 60e3;
+let w = RG.away(T(1, 20, 30), T(1, 21, 42));
+assert.deepStrictEqual([w.ms / 60e3, w.ask, w.long], [72, true, false]);
+assert.strictEqual(sum(RG.settle([], T(1, 20, 0), T(1, 20, 30), T(1, 21, 42), 'all')), 102);     // count it all
+assert.strictEqual(sum(RG.settle([], T(1, 20, 0), T(1, 20, 30), T(1, 21, 42), 'until')), 30);    // only until the screen went off
+// earlier parts of the run (before a pause) stay as they are
+assert.deepStrictEqual(RG.settle([[T(1, 19, 0), T(1, 19, 10)]], T(1, 20, 0), T(1, 20, 30), T(1, 21, 0), 'until'), [[T(1, 19, 0), T(1, 19, 10)], [T(1, 20, 0), T(1, 20, 30)]]);
+// up to 20 minutes away: no question; just over: the question
+assert.strictEqual(RG.away(T(1, 20, 0), T(1, 20, 20)).ask, false);
+assert.strictEqual(RG.away(T(1, 20, 0), T(1, 20, 21)).ask, true);
+// more than 4 hours away: propose "only until the screen went off"
+w = RG.away(T(1, 22, 0), T(2, 3, 0));
+assert.deepStrictEqual([w.ask, w.long], [true, true]);
+assert.strictEqual(RG.away(T(1, 22, 0), T(2, 2, 0)).long, false);
+// across midnight: started 23:30, screen off at 23:50, back at 0:40
+assert.deepStrictEqual(RG.splitByDay(RG.settle([], T(1, 23, 30), T(1, 23, 50), T(2, 0, 40), 'all')), { '2026-03-01': 1800, '2026-03-02': 2400 });
+assert.deepStrictEqual(RG.splitByDay(RG.settle([], T(1, 23, 30), T(1, 23, 50), T(2, 0, 40), 'until')), { '2026-03-01': 1200 });
+// a long night: off at 22:15, back at 7:05 the next morning, only until the screen went off
+assert.deepStrictEqual(RG.splitByDay(RG.settle([], T(1, 21, 45), T(1, 22, 15), T(2, 7, 5), 'until')), { '2026-03-01': 1800 });
+// a paused run (no open part) has nothing to settle
+assert.deepStrictEqual(RG.settle([[T(1, 20, 0), T(1, 20, 5)]], null, T(1, 20, 5), T(1, 21, 0), 'all'), [[T(1, 20, 0), T(1, 20, 5)]]);
+
 // record ignores typed-in time, sums the parts of one run
 assert.strictEqual(RG.longestRun([s('2026-03-01', 10, 'r1'), s('2026-03-02', 20, 'r1'), s('2026-03-03', 90, 'r2', true)]), 1800);
 
