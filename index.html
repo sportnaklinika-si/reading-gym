@@ -25,9 +25,19 @@
   --accent:#2F5B4E; --accent-soft:rgba(47,91,78,.09); --on-accent:#FFFFFF;
   --good:#2F7A52; --good-soft:rgba(47,122,82,.11); --on-good:#FFFFFF;
   --mark:#B04A40; --mark-soft:rgba(176,74,64,.10); --under:#7F8FB0; --danger:#B04A40;
-  /* the kid reader and the tier rings */
-  --kid-line:#2A2927; --kid-fill:#FFFFFF; --kid-soft:#EEECE7; --kid-accent:#D98A6A; --kid-glow:rgba(217,160,74,.18); --kid-disc:#FFFFFF; --kid-stroke:2.2px;
-  --tier-1:#B98A63; --tier-2:#A6AEB9; --tier-3:#C7A04A; --lock:#DDD9D1;
+  /* the level illustration: the reader growing up, the cat and the room (kid.js turns each --il-* into a fill and a stroke class) */
+  --il-wall:#EDE7DD; --il-wall-shade:#E1D8C8; --il-floor:#D8C6AC; --il-floor-shade:#C9B596; --il-rug:#BFCAB9; --il-rug-2:#A6B5A2;
+  --il-skin:#EDBE96; --il-skin-shade:#D39A72; --il-blush:#E58C7A; --il-lip:#A65A48; --il-ink:#2B2522;
+  --il-hair:#5B3A29; --il-hair-grey:#A39C93; --il-hair-white:#ECE8E1;
+  --il-cloth-1:#F2C14E; --il-cloth-2:#5B8BD9; --il-cloth-2b:#F7F4EC; --il-cloth-3:#3E7D6A; --il-cloth-3d:#2F6253; --il-cloth-4:#C7684E; --il-cloth-4d:#A8533C;
+  --il-cloth-5:#DCE3EA; --il-cloth-6:#55607A; --il-cloth-7:#8C6B9E; --il-pants:#3A4A63; --il-pants-kid:#7C9CC9; --il-shoe:#2E2B29;
+  --il-book:#C8483D; --il-book-2:#3F6FB5; --il-book-3:#4E8A5C; --il-book-4:#D9A441; --il-star:#F2C14E; --il-paper:#FBF8F1; --il-paper-line:#D3CABB;
+  --il-wood:#B58B63; --il-wood-dark:#7E5638; --il-chair:#6E8C7A; --il-chair-shade:#5C7867; --il-cushion:#E0A458; --il-beanbag:#7A6FB0; --il-blanket:#E2CDA8; --il-box:#C9A273;
+  --il-window:#3D4E78; --il-window-frame:#F7F4EC; --il-moon:#F6E7B4; --il-curtain:#C7684E; --il-plant:#5E9A62; --il-plant-dark:#3F7A4C; --il-pot:#C97B52;
+  --il-cat:#E39B4F; --il-cat-shade:#C27A36; --il-cat-light:#F6E4CC; --il-cat-old:#CEC7BB; --il-nose:#D9787A;
+  --il-lamp:#F2C14E; --il-light:rgba(255,214,140,.32); --il-beam:rgba(255,232,180,.36); --il-glow:rgba(255,214,140,.45);
+  /* tier rings around the illustration, and locked levels */
+  --tier-1:#B98A63; --tier-2:#A6AEB9; --tier-3:#C7A04A; --lock:#DDD9D1; --lock-bg:#EEECE7;
   /* book covers without a photo */
   --cloth-1:#7A3B3F; --cloth-2:#36486E; --cloth-3:#2F5B4E; --cloth-4:#7C6232; --cloth-5:#5A4A72; --cloth-6:#355F66; --foil:#F1DDB0;
   /* layers */
@@ -89,30 +99,38 @@ main{max-width:560px; margin:0 auto; padding:calc(var(--top) + 28px) max(20px, e
 .del.armed{background:var(--danger); color:var(--on-accent); border-radius:var(--r-sm); padding-inline:18px}
 .add{display:flex; align-items:center; justify-content:center; gap:8px; min-height:48px; border:0; background:transparent; border-radius:var(--r-md); color:var(--accent); font-weight:650; width:100%}
 
-/* the kid reader: a line drawing coloured entirely by the theme */
-.kid{display:block; flex:none; overflow:visible}
-.kid .k-disc{fill:var(--kid-disc)}
-.kid .k-ring{fill:none; stroke-width:2}
+/* the level illustration: a room with the reader and the cat, coloured entirely by the theme (--il-*) */
+.kid{display:block; flex:none; border-radius:calc(var(--r-lg) * 1.4)}
+.kid .k-bg{fill:var(--il-wall)}
+.kid .k-ring{fill:none; stroke-width:3}
 .kid.t1 .k-ring{stroke:var(--tier-1)} .kid.t2 .k-ring{stroke:var(--tier-2)} .kid.t3 .k-ring{stroke:var(--tier-3)}
-.k-l{fill:none; stroke:var(--kid-line); stroke-width:var(--kid-stroke); stroke-linecap:round; stroke-linejoin:round}
-.k-f{fill:var(--kid-fill)} .k-s{fill:var(--kid-soft)} .k-g{fill:var(--kid-glow)} .k-g1{opacity:.6}
-.k-a{fill:none; stroke:var(--kid-accent); stroke-width:4.5; stroke-linecap:round}
-.k-a-f{fill:var(--kid-accent)}
-.k-t{fill:var(--kid-line)} .k-letter{font:700 13px var(--display)} .k-small{font:700 8.5px var(--display); letter-spacing:.04em}
-.k-thin{stroke-width:1.5px} .k-dash{stroke-dasharray:2 3}
-.k-ray{stroke:var(--kid-accent); stroke-width:2; stroke-linecap:round; opacity:.7}
-.k-ground{stroke:var(--line); stroke-width:2; stroke-linecap:round}
-.kid.locked .k-disc{fill:var(--bg)}
+.kid .page{opacity:0}
+/* locked levels: the room is hidden, the reader and the cat are a silhouette */
+.kid.locked .k-bg{fill:var(--lock-bg)}
 .kid.locked .k-ring{stroke:var(--line)}
-.kid.locked .fig .k-l,.kid.locked .fig .k-a,.kid.locked .fig .k-ray{stroke:var(--lock)}
-.kid.locked .fig .k-f,.kid.locked .fig .k-s,.kid.locked .fig .k-t,.kid.locked .fig .k-a-f{fill:var(--lock)}
-.kid.locked .k-g,.kid.locked .k-ground{display:none}
-.kid-wrap{position:relative; display:inline-block; line-height:0; border-radius:50%}
+.kid.locked .room,.kid.locked .glow{display:none}
+.kid.locked .fig [class*="f-"]{fill:var(--lock)!important; fill-opacity:1!important; opacity:1!important}
+.kid.locked .fig [class*="s-"]{stroke:var(--lock)!important; opacity:1!important}
+/* gentle life, only on the drawings marked live: breathing, blinking, a page turning, a cat's tail, dust in the light */
+.kid.live .breath{animation:breath 4.6s ease-in-out infinite; transform-box:fill-box; transform-origin:50% 100%}
+.kid.live .blink{animation:blink 6.2s infinite; transform-box:fill-box; transform-origin:50% 50%}
+.kid.live .page{animation:page 7.5s ease-in-out infinite; transform-box:fill-box; transform-origin:0% 50%}
+.kid.live .tail{animation:tail 3.4s ease-in-out infinite; transform-box:fill-box; transform-origin:0% 100%}
+.kid.live .snooze{animation:breath 3.2s ease-in-out infinite; transform-box:fill-box; transform-origin:50% 100%}
+.kid.live .steam{animation:steam 3s ease-in-out infinite}
+.kid.live .aura{animation:aura 5s ease-in-out infinite}
+.kid.live .mote{animation:mote 6s linear infinite}
+.kid-wrap{position:relative; display:inline-block; line-height:0; border-radius:calc(var(--r-lg) * 1.4)}
 .kid-wrap.glow-new{animation:halo 2.8s ease-in-out infinite}
-.kid-wrap.press .kid{animation:press .9s var(--ease) both}
+/* level up: the old stage fades into light, the new one grows out of it */
+.morph{position:relative; display:grid; place-items:center}
+.morph > *{grid-area:1/1}
+.morph .old{animation:morph-out 1s .3s var(--ease) both}
+.morph .new{animation:morph-in 1.3s 1s var(--ease) both}
+.morph .burst{width:200px; height:200px; border-radius:50%; border:3px solid var(--tier-3); background:radial-gradient(circle, var(--il-glow) 0, transparent 68%); opacity:0; animation:burst 1.2s .85s var(--ease) both}
 
 /* level header */
-.lvl{display:grid; grid-template-columns:96px minmax(0,1fr); gap:16px; align-items:center; background:none; border:0; padding:0; text-align:left; width:100%; color:inherit}
+.lvl{display:grid; grid-template-columns:132px minmax(0,1fr); gap:16px; align-items:center; background:none; border:0; padding:0; text-align:left; width:100%; color:inherit}
 .lvl h1{font-size:1.6rem}
 .lvl .meta{display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; font-size:.85rem; color:var(--muted); margin:4px 0 12px}
 .chip{display:inline-flex; align-items:center; gap:4px; font-size:.75rem; font-weight:650; border-radius:var(--r-pill); padding:2px 9px; white-space:nowrap}
@@ -213,6 +231,12 @@ main{max-width:560px; margin:0 auto; padding:calc(var(--top) + 28px) max(20px, e
 .cal .c.miss{color:var(--faint)}
 .cal .c.open,.cal .c.today{box-shadow:inset 0 0 0 1.5px var(--accent); color:var(--fg); font-weight:700; border-radius:50%}
 .cal .c.future{opacity:.38}
+.month{display:grid; grid-template-columns:1fr 1fr; gap:0 18px; margin:2px 0 18px}
+.month div{display:flex; align-items:baseline; justify-content:space-between; gap:8px; padding:9px 0; border-bottom:1px solid var(--line)}
+.month span{font-size:.82rem; color:var(--muted)}
+.month b{font:700 1.02rem var(--display); font-variant-numeric:tabular-nums; white-space:nowrap}
+.cal .c.zero{color:var(--faint)}
+.cal .c.zero::after{content:""; position:absolute; left:34%; right:34%; bottom:14%; height:1.5px; border-radius:2px; background:var(--line)}
 .legend{display:flex; flex-wrap:wrap; gap:8px 16px; font-size:.78rem; color:var(--muted); margin-top:14px}
 .legend span{display:inline-flex; align-items:center; gap:6px}
 .legend i{display:inline-block; width:12px; height:12px; border-radius:4px}
@@ -312,7 +336,17 @@ main{max-width:560px; margin:0 auto; padding:calc(var(--top) + 28px) max(20px, e
 @keyframes thunk{0%{transform:rotate(calc(var(--r, 0deg) * var(--stamp-tilt))) scale(1.8); opacity:0} 55%{transform:rotate(calc(var(--r, 0deg) * var(--stamp-tilt))) scale(.93); opacity:1} 100%{transform:rotate(calc(var(--r, 0deg) * var(--stamp-tilt))) scale(1)}}
 @keyframes halo{0%,100%{box-shadow:0 0 0 0 transparent} 50%{box-shadow:0 0 0 7px var(--accent-soft)}}
 @keyframes spark{0%{opacity:1; transform:translate(0,0) rotate(0)} 100%{opacity:0; transform:translate(var(--dx), var(--dy)) rotate(200deg)}}
-@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important; transition:none!important}}
+@keyframes breath{0%,100%{transform:scale(1,1)} 50%{transform:scale(1.012,1.024)}}
+@keyframes blink{0%,93%,100%{transform:scaleY(1)} 95%{transform:scaleY(.08)}}
+@keyframes page{0%,72%{opacity:0; transform:scaleX(1)} 74%{opacity:1; transform:scaleX(1)} 88%{opacity:1; transform:scaleX(-1)} 90%,100%{opacity:0; transform:scaleX(-1)}}
+@keyframes tail{0%,100%{transform:rotate(0)} 50%{transform:rotate(-14deg)}}
+@keyframes steam{0%,100%{opacity:.25; transform:translateY(0)} 50%{opacity:.8; transform:translateY(-2px)}}
+@keyframes aura{0%,100%{opacity:.7} 50%{opacity:1}}
+@keyframes mote{0%{opacity:0; transform:translateY(0)} 25%{opacity:1} 100%{opacity:0; transform:translateY(-34px)}}
+@keyframes morph-out{0%{opacity:1; transform:scale(1); filter:none} 100%{opacity:0; transform:scale(1.08); filter:blur(6px) brightness(1.7)}}
+@keyframes morph-in{0%{opacity:0; transform:scale(.84); filter:blur(5px) brightness(2)} 60%{opacity:1; transform:scale(1.04); filter:blur(0) brightness(1.15)} 100%{opacity:1; transform:scale(1); filter:none}}
+@keyframes burst{0%{opacity:0; transform:scale(.4)} 30%{opacity:1} 100%{opacity:0; transform:scale(1.5)}}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important; transition:none!important} .morph .old,.morph .burst{display:none}}
 @media (hover:hover){.btn:hover{filter:brightness(1.05)} .book:hover h3{text-decoration:underline; text-underline-offset:3px} .shelf:hover .cover{transform:translateY(-2px)} .tabs button:hover{color:var(--fg)}}
 </style>
 </head>

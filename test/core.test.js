@@ -31,9 +31,9 @@ st = RG.streak(days('2026-03-01', 3, 25), g2, '2026-03-03');
 assert.deepStrictEqual([st.days['2026-03-02'], st.days['2026-03-03']], ['tick', 'open']);
 
 // levels
-assert.strictEqual(RG.level(0).name, 'Črkolovec');
-assert.strictEqual(RG.level(25 * 3600).name, 'Knjižni molj z očali');
-assert.strictEqual(RG.level(5000 * 3600).name, 'Razsvetljeni');
+assert.strictEqual(RG.level(0).name, 'Raven 1');
+assert.strictEqual(RG.level(25 * 3600).name, 'Raven 7');
+assert.strictEqual(RG.level(5000 * 3600).name, 'Raven 18');
 assert.ok(Math.abs(RG.level(20 * 3600).frac - 0.5) < 1e-9);
 
 // a session across midnight is split between the two days

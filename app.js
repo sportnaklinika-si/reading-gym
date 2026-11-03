@@ -183,7 +183,7 @@ function nextToast() {
 }
 function party(html) { const el = $('#party'); el.innerHTML = html + '<button class="btn primary" data-act="party-close">Super</button>'; el.hidden = false; }
 // paper confetti in the stamp-pad colours
-const CONFETTI = ['var(--accent)', 'var(--good)', 'var(--mark)', 'var(--under)', 'var(--tier-3)', 'var(--kid-accent)'];
+const CONFETTI = ['var(--accent)', 'var(--good)', 'var(--mark)', 'var(--under)', 'var(--tier-3)', 'var(--il-cloth-4)'];
 const sparks = () => Array.from({ length: 14 }, (_, k) => {
   const a = k / 14 * 2 * Math.PI + 0.2, d = 100 + (k % 3) * 16;
   return `<i class="spark" style="--dx:${Math.round(Math.cos(a) * d)}px;--dy:${Math.round(Math.sin(a) * d)}px;background:${CONFETTI[k % 6]};animation-delay:${(0.28 + (k % 4) * 0.05).toFixed(2)}s"></i>`;
@@ -191,7 +191,7 @@ const sparks = () => Array.from({ length: 14 }, (_, k) => {
 function levelUp(i) {
   const L = RG.LEVELS[i], n = RG.LEVELS[i + 1];
   vibrate([80, 60, 80, 60, 160]);
-  party(`<div class="hero"><span class="kid-wrap press">${KID(i, 188)}</span>${sparks()}</div><h2>${esc(L[1])}</h2><p>${esc(KID_NOTES[i])}</p><p>Stopnja ${i + 1} od ${RG.LEVELS.length}, ${L[0]} h branja.${n ? ' Naslednja: ' + esc(n[1]) + ' pri ' + n[0] + '&nbsp;h.' : ' To je vrh poti.'}</p>`);
+  party(`<div class="hero morph">${i > 0 ? `<span class="kid-wrap old">${KID(i - 1, 200)}</span>` : ""}<i class="burst"></i><span class="kid-wrap new">${KID(i, 200, false, true)}</span>${sparks()}</div><h2>${esc(L[1])}</h2><p>${esc(RG.LEVELS[i][2])}</p><p>Stopnja ${i + 1} od ${RG.LEVELS.length}, ${L[0]} h branja.${n ? ' Naslednja: ' + esc(n[1]) + ' pri ' + n[0] + '&nbsp;h.' : ' To je vrh poti.'}</p>`);
 }
 
 // ---------- drawing bits
@@ -254,7 +254,7 @@ function installCard() {
 }
 // The level reached last time the roster was open. A newer level glows on Today until the roster is opened.
 const seenLvl = () => { const v = lsGet('rg-seen-lvl'); return v == null ? null : Number(v); };
-const emptyBooks = () => `<section class="panel empty">${KID(1, 120)}<h2>Tvoja prva knjiga</h2><p>Dodaj knjigo, ki jo bereš. Dovolj je fotografija platnice ali samo naslov.</p><button class="btn primary" data-act="add">Dodaj knjigo</button></section>`;
+const emptyBooks = art => `<section class="panel empty">${art ? KID(0, 168, false, true) : ""}<h2>Tvoja prva knjiga</h2><p>Dodaj knjigo, ki jo bereš. Dovolj je fotografija platnice ali samo naslov.</p><button class="btn primary" data-act="add">Dodaj knjigo</button></section>`;
 function vToday() {
   const tot = totalSec(), L = RG.level(tot), st = streakNow(), t = today(), tsec = daySec(t), goal = goalNow(), done = tsec >= goal * 60;
   const reading = S.books.filter(b => b.status === 'reading'), BT = RG.bookTotals(S.sessions);
@@ -263,10 +263,10 @@ function vToday() {
   const fresh = DEMO ? location.hash === '#demo-new' : seenLvl() != null && L.i > seenLvl();
   return `${DEMO ? '<p class="demo">Vzorčni podatki, nič se ne shrani</p>' : ''}${installCard()}
   <button class="lvl" data-act="tab" data-tab="stats" data-to="ladder" aria-label="${esc(L.name)}, stopnja ${L.i + 1} od ${RG.LEVELS.length}. Odpri pot do razsvetljenja.">
-    <span class="kid-wrap${fresh ? ' glow-new' : ''}">${KID(L.i, 92)}</span>
+    <span class="kid-wrap${fresh ? ' glow-new' : ''}">${KID(L.i, 132, false, true)}</span>
     <div style="min-width:0"><h1>${esc(L.name)}</h1><p class="meta"><span>Stopnja ${L.i + 1} od ${RG.LEVELS.length}</span><span aria-hidden="true">·</span><span>${tot < 3600 ? fmtMin(tot) : fmtHours(tot)} branja</span>${fresh ? '<span class="chip new">Nova stopnja</span>' : ''}</p>
-    ${L.next != null ? `<div class="trackrow"><div class="track"><i style="width:${(L.frac * 100).toFixed(1)}%"></i></div>${KID(L.i + 1, 32, true)}</div><p class="sub">Še <b>${left < 3600 ? Math.ceil(left / 60) + ' min' : fmtHours(left)}</b> do stopnje ${esc(L.nextName)}</p>` : '<p class="sub">Vrh poti. Vse stopnje so tvoje.</p>'}</div></button>
-  ${S.books.length ? '' : emptyBooks()}
+    ${L.next != null ? `<div class="trackrow"><div class="track"><i style="width:${(L.frac * 100).toFixed(1)}%"></i></div>${KID(L.i + 1, 34, true)}</div><p class="sub">Še <b>${left < 3600 ? Math.ceil(left / 60) + ' min' : fmtHours(left)}</b> do stopnje ${esc(L.nextName)}</p>` : '<p class="sub">Vrh poti. Vse stopnje so tvoje.</p>'}</div></button>
+  ${S.books.length ? '' : emptyBooks(false)}
   <section class="panel today">${ring(tsec, goal, 96)}<div><h2>${done ? 'Cilj dosežen' : 'Danes'}</h2><p><b>${fmtMin(tsec)}</b> ${done ? 'branja' : 'od ' + goal + ' min'}</p><p>${done ? 'Dnevni cilj: ' + goal + ' min. Se vidiva jutri.' : 'Še ' + Math.ceil((goal * 60 - tsec) / 60) + ' min'}</p></div></section>
   <section class="panel streak"><div class="marks" role="img" aria-label="Zaznamki: ${st.marks} od ${RG.MARK_MAX}">${[0, 1, 2].map(i => mark(i < st.marks)).join('')}</div>
     <div class="streak-top"><b>${st.cur}</b><span>${plural(st.cur, DAYS)} zapored</span></div>
@@ -280,7 +280,7 @@ function vBooks() {
   const fin = g('finished').sort((a, b) => (b.done || '').localeCompare(a.done || ''));
   const year = String(new Date().getFullYear()), finYear = fin.filter(b => (b.done || '').startsWith(year)).length;
   const list = (title, arr, play) => arr.length ? `<h2 class="sec">${title} <span>${arr.length}</span></h2><div class="books">${arr.map(b => bookCard(b, BT[b.id], play)).join('')}</div>` : '';
-  if (!S.books.length) return `<h1 class="title">Knjige</h1>${emptyBooks()}`;
+  if (!S.books.length) return `<h1 class="title">Knjige</h1>${emptyBooks(true)}`;
   return `<h1 class="title">Knjige</h1><p class="lede">${fin.length ? fin.length + ' ' + plural(fin.length, ['prebrana', 'prebrani', 'prebrane', 'prebranih']) + ' · ' + finYear + ' v letu ' + year : 'Še nič prebranega'}</p>
   ${list('Trenutno berem', g('reading'), true)}
   <button class="add" data-act="add">${IC.plus}Dodaj knjigo</button>
@@ -308,16 +308,26 @@ function calendar(st) {
   const [y, m] = calMonth, first = new Date(y, m, 1), n = new Date(y, m + 1, 0).getDate(), lead = (first.getDay() + 6) % 7;
   const cells = ['pon', 'tor', 'sre', 'čet', 'pet', 'sob', 'ned'].map(h => `<span class="h">${h}</span>`);
   for (let i = 0; i < lead; i++) cells.push('<span></span>');
+  const past = [];   // the month's days up to today: what the month's numbers count
   for (let d = 1; d <= n; d++) {
-    const k = RG.dayKey(new Date(y, m, d)), s = k > t ? 'future' : st.days[k] || (k === t ? 'today' : ''), min = (DT[k] || 0) / 60;
-    // minutes under the goal show as a violet ink dot that grows with the time read
+    const k = RG.dayKey(new Date(y, m, d)), min = (DT[k] || 0) / 60;
+    // a day with no reading at all is marked as such, so the month shows plainly when there was reading and when not
+    const s = k > t ? 'future' : st.days[k] || (k === t ? 'today' : '') || (min ? '' : 'zero');
+    if (k <= t) past.push(k);
+    // minutes under the goal show as a dot that grows with the time read
     const sz = f1(3 + 5 * Math.min(1, min / RG.goalFor(S.goals, k)));
     const dot = s !== 'tick' && s !== 'future' && min > 0 ? `<i style="width:${sz}px;height:${sz}px"></i>` : '';
-    cells.push(`<span class="c ${s}"${s === 'tick' || s === 'saved' ? ` style="--r:${tilt(k)}deg"` : ''} title="${esc((STATUS[s] || '') + (min >= 1 ? (STATUS[s] ? ', ' : '') + Math.round(min) + ' min' : ''))}">${d}${s === 'saved' ? MINI_MARK : ''}${dot}</span>`);
+    cells.push(`<span class="c ${s}"${s === 'tick' || s === 'saved' ? ` style="--r:${tilt(k)}deg"` : ''} title="${esc((STATUS[s] || (s === 'zero' ? 'brez branja' : '')) + (min >= 1 ? (STATUS[s] ? ', ' : '') + Math.round(min) + ' min' : ''))}">${d}${s === 'saved' ? MINI_MARK : ''}${dot}</span>`);
   }
+  // the month in numbers: days with reading, total time, goal days and the longest run of goal days (a bookmark day keeps the run going)
+  const readDays = past.filter(k => DT[k] > 0).length, total = past.reduce((a, k) => a + (DT[k] || 0), 0), goalDays = past.filter(k => st.days[k] === 'tick').length;
+  let best = 0, run = 0;
+  for (const k of past) { if (st.days[k] === 'tick') best = Math.max(best, ++run); else if (st.days[k] !== 'saved') run = 0; }
   const atNow = y === now.getFullYear() && m === now.getMonth(), label = first.toLocaleDateString('sl-SI', { month: 'long', year: 'numeric' });
-  return `<section class="panel"><div class="cal-head"><button data-act="cal" data-d="-1" aria-label="Prejšnji mesec">${IC.prev}</button><h2>${label.charAt(0).toUpperCase() + label.slice(1)}</h2><button data-act="cal" data-d="1" aria-label="Naslednji mesec"${atNow ? ' disabled' : ''}>${IC.next}</button></div>
-  <div class="cal">${cells.join('')}</div><div class="legend"><span><i style="background:var(--good-soft); box-shadow:inset 0 0 0 1.5px var(--good)"></i>cilj dosežen</span><span><i style="background:var(--mark-soft); box-shadow:inset 0 0 0 1.5px var(--mark)"></i>rešeno z zaznamkom</span><span><i style="background:var(--under); width:8px; height:8px; border-radius:50%"></i>branje pod ciljem</span></div></section>`;
+  const stat = (lab, val) => `<div><span>${lab}</span><b>${val}</b></div>`;
+  return `<section class="panel" aria-label="Mesec"><div class="cal-head"><button data-act="cal" data-d="-1" aria-label="Prejšnji mesec">${IC.prev}</button><h2>${label.charAt(0).toUpperCase() + label.slice(1)}</h2><button data-act="cal" data-d="1" aria-label="Naslednji mesec"${atNow ? ' disabled' : ''}>${IC.next}</button></div>
+  ${past.length ? `<div class="month">${stat('Bralni dnevi', readDays + ' od ' + past.length)}${stat('Skupaj', total ? fmtMin(total) : '–')}${stat('Cilj dosežen', goalDays + ' ' + plural(goalDays, DAYS))}${stat('Najdaljši niz', best + ' ' + plural(best, DAYS))}</div>` : ''}
+  <div class="cal">${cells.join('')}</div><div class="legend"><span><i style="background:var(--good-soft); box-shadow:inset 0 0 0 1.5px var(--good)"></i>cilj dosežen</span><span><i style="background:var(--mark-soft); box-shadow:inset 0 0 0 1.5px var(--mark)"></i>rešeno z zaznamkom</span><span><i style="background:var(--under); width:8px; height:8px; border-radius:50%"></i>branje pod ciljem</span><span><i style="box-shadow:inset 0 -1.5px 0 var(--line); border-radius:0"></i>brez branja</span></div></section>`;
 }
 // The roster of the kid's 18 stages: name plate, hours and a one-line note; stages not reached yet are silhouettes.
 function roster(L) {
@@ -325,7 +335,7 @@ function roster(L) {
   return `<section class="panel" id="ladder"><div class="head"><h2>Pot do razsvetljenja</h2><span class="muted num" style="font-size:.85rem">stopnja ${L.i + 1} od ${RG.LEVELS.length}</span></div>
   ${TIERS.map((name, tr) => `<div class="tier"><p class="tier-h"><i style="background:var(--tier-${tr + 1})"></i>${name}<small>${RG.LEVELS[tr * 6][0]}–${RG.LEVELS[tr * 6 + 5][0]} h</small></p><div class="roster">${RG.LEVELS.slice(tr * 6, tr * 6 + 6).map((x, j) => {
     const i = tr * 6 + j, now = i === L.i, off = i > L.i;
-    return `<div class="cell${now ? ' now' : off ? ' locked' : ''}">${KID(i, 76, off)}<b>${esc(x[1])}</b><small>${now ? 'Tukaj si' : off ? 'pri ' + x[0] + ' h' : x[0] + ' h'}</small>${off ? '' : `<em>${esc(KID_NOTES[i])}</em>`}</div>`;
+    return `<div class="cell${now ? ' now' : off ? ' locked' : ''}">${KID(i, 128, off, now)}<b>${esc(x[1])}</b><small>${now ? 'Tukaj si' : off ? 'pri ' + x[0] + ' h' : x[0] + ' h'}</small>${off ? '' : `<em>${esc(RG.LEVELS[i][2])}</em>`}</div>`;
   }).join('')}</div></div>`).join('')}</section>`;
 }
 function vStats() {
@@ -556,7 +566,11 @@ function demoState() {
   if (DEMO && location.hash === '#demo-add') sheetBook();
   if (DEMO && location.hash === '#demo-level') levelUp(6);
   if (DEMO && location.hash === '#demo-finished') setStatus('d1', 'finished');
-  if (DEMO && location.hash === '#demo-levels') $('#view').innerHTML = `<div class="roster" style="grid-template-columns:repeat(3,minmax(0,1fr))">${RG.LEVELS.map((x, i) => `<div class="cell">${KID(i, 104)}<b>${esc(x[1])}</b><small>${x[0]} h</small></div>`).join('')}</div><div class="roster" style="grid-template-columns:repeat(3,minmax(0,1fr))">${[3, 9, 16].map(i => `<div class="cell locked">${KID(i, 104, true)}<b>${esc(RG.LEVELS[i][1])}</b><small>zaklenjeno</small></div>`).join('')}</div>`;
+  if (DEMO && location.hash === '#demo-levels') $('#view').innerHTML = `<div class="roster" style="grid-template-columns:repeat(3,minmax(0,1fr))">${RG.LEVELS.map((x, i) => `<div class="cell">${KID(i, 112)}<b>${esc(x[1])}</b><small>${x[0]} h</small></div>`).join('')}</div><div class="roster" style="grid-template-columns:repeat(3,minmax(0,1fr))">${[3, 9, 16].map(i => `<div class="cell locked">${KID(i, 112, true)}<b>${esc(RG.LEVELS[i][1])}</b><small>zaklenjeno</small></div>`).join('')}</div>`;
+  // last month's numbers and calendar (a full month of example data)
+  if (DEMO && location.hash === '#demo-month') { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 1); calMonth = [d.getFullYear(), d.getMonth()]; view = 'stats'; render(); document.querySelector('[aria-label="Mesec"]').scrollIntoView(); }
+  // levels 1, 4, 7, 10, 13, 16 and 18 side by side, for judging the character as it grows up
+  if (DEMO && location.hash === '#demo-ages') { document.body.style.background = 'var(--bg)'; document.body.innerHTML = `<div style="display:flex; gap:18px; padding:20px">${[0, 3, 6, 9, 12, 15, 17].map(i => `<figure style="margin:0; display:grid; gap:6px; justify-items:center; font:600 14px var(--font)">${KID(i, 210)}<b style="font:700 15px var(--display)">${esc(RG.LEVELS[i][1])}</b><span style="color:var(--muted)">${RG.LEVELS[i][0]} h</span></figure>`).join('')}</div>`; }
   let day = today();
   setInterval(() => { if (today() !== day) { day = today(); render(); } }, 60e3);
   if (!DEMO && 'serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});

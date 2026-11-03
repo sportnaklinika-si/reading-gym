@@ -100,15 +100,15 @@ components:
 
 **Creative North Star: "The Quiet Reading Log"**
 
-A reading log that stays out of the way: one column, generous space, sections separated by a single hairline instead of boxes. Every reading day is a dated slot that fills when the goal is reached, the way a library due-date card collects its stamps. The reward is a character: one kid reader drawn in calm lines who, level by level, gains a picture book, glasses, a backpack, a lamp, a cape of pages, and at the top floats in light.
+A reading log that stays out of the way: one column, generous space, sections separated by a single hairline instead of boxes. Every reading day is a dated slot that fills when the goal is reached, the way a library due-date card collects its stamps. The reward is a character in a room: a flat illustration of one reader who grows up across the 18 levels (toddler, schoolkid, teen, adult, middle-aged, old), with a cat that grows old alongside and a room that fills in level by level until it is a library full of light.
 
-**The look is a placeholder.** Jan asked for "simplicity, clean vibe, smart vibe, zen mode" and will choose the final style from examples. Until then the app runs a neutral paper-and-ink theme. The system is built so that choice lands in one place: every colour, font, radius and shadow is a custom property in the single theme block at the top of `index.html`, and the kid is coloured only by `--kid-*` variables.
+**The look is a placeholder.** Jan asked for "simplicity, clean vibe, smart vibe, zen mode" and will choose the final style from examples. Until then the app runs a neutral paper-and-ink theme. The system is built so that choice lands in one place: every colour, font, radius and shadow is a custom property in the single theme block at the top of `index.html`, and the level illustration is coloured only by the `--il-*` variables.
 
 **Key Characteristics:**
 - One theme block (`:root`, between the THEME and "end of theme" comments) owns all visual values; no colour lives anywhere else.
 - Space and hairlines, not cards. Book lists are rows with a bottom hairline.
 - One accent for what you press; three meanings with their own colour: goal reached, bookmarks and records, minutes under the goal.
-- The kid reader is the only illustration, a line drawing in a disc ringed by its tier (bronze, silver, gold).
+- The level illustration is the only picture: a square room with rounded corners, ringed by its tier (bronze, silver, gold), coloured by the --il-* group of the theme.
 - The reading screen is near black in every theme so it can stay on beside the book.
 
 ## Colors
@@ -129,7 +129,8 @@ Restrained: a paper ground, ink text, one accent and three meaning colours.
 - **Paper** (paper): the page ground and inputs. **Surface** (surface): sheets and secondary buttons. **Surface quiet** (surface-quiet): tracks and quiet chips. **Hairline** (hairline): every divider and border.
 - **Ink** (ink) for text, **Muted** (muted, 6:1 on paper) for secondary text, **Faint** (faint, 4.9:1) for empty slots and locked names.
 - **Reader black** (reader-black) with dimmed **reader text** and a dim **reader ring**: the running timer.
-- **Tier bronze / silver / gold**: only the ring around the kid and the dot beside a tier name.
+- **Tier bronze / silver / gold**: only the ring around the illustration and the dot beside a tier name.
+- **Illustration group (--il-*)**: the room, the reader, the cat and the light, about sixty variables (wall, floor, skin, hair at three ages, clothes per age, books, wood, plants, cat, lamp light, glow). They are part of the theme block and change with it; `kid.js` turns each into a fill class `f-*` and a stroke class `s-*`.
 
 ### Named Rules
 **The One Block Rule.** A new colour, font, radius or shadow is added to the theme block first and referenced by name everywhere else. Inline SVG uses `style="fill:var(...)"` or the kid's classes, never a literal.
@@ -177,9 +178,16 @@ Soft and quiet: 10px slots and inputs, 14px buttons, 20px sheet tops and roster 
 - Seven per week on Today. Empty: the date in faint over a dashed hairline. Today, open: accent outline. Goal reached: good-soft fill with the date in good. Saved by a bookmark: mark-soft fill with a small bookmark and the date in mark. The day the goal is reached the slot presses in once.
 - Theme switches: `--stamp-tilt` (0 straight, 1 a few degrees crooked, stamp-like) and `--stamp-mask` (an ink-grain mask). Both off in the placeholder.
 
-### The kid reader (signature)
-- `kid.js` draws one kid at 18 stages in a 120-unit viewBox: line strokes (`k-l`, `--kid-line`, `--kid-stroke`), paper fills (`k-f`), soft fills (`k-s`), one accent scarf (`k-a`), glow (`k-g`). Glasses from stage 7, a cape of pages from 13, closed calm eyes and a halo from 14, floating from 15, light at 18. Each drawing clips to its disc; the ring is the tier colour. Locked stages are silhouettes in `--lock`.
-- Shown at 96px on Today (with the next stage as a 32px silhouette at the end of the progress bar), 188px in the level-up overlay, 76px in the roster with name, hours and a one-line note.
+### The level illustration (signature)
+- `kid.js` draws a 160-unit square room for each of the 18 levels. The reader ages every three levels: toddler on the rug (picture book), schoolkid on a cushion, teen on a beanbag (hoodie, headphones), adult in an armchair (sweater), middle-aged (vest, reading glasses, grey temples), old (white hair, cardigan, blanket on the knees). Real proportions: head, ears, eyes that look down at the book, brows, nose, mouth, hair, clothes, sleeves, hands holding the book.
+- Running jokes: the cat (kitten, young, adult, round, old with grey muzzle) plays with the ribbon, sleeps, sits on the window sill, lies on the book, wears the teen's headphones, knocks a book off the shelf, sleeps on the lap, conquers the bookcase and finally reads with its own glasses. The favourite red picture book (a cat on its right page, gold ribbon) is in the toddler's hands, on the teen's floor, face-out on the adult's shelf, and in the old reader's hands again.
+- The room fills in: rug, child's drawing, small shelf, window with the moon, floor lamp and its light, plant, fairy lights, poster, book stacks, curtains, tall plant, framed picture, side table with a steaming cup, full bookcase, clock, low bookcase and ladder, light beams, and at level 18 a soft glow with dust in the light.
+- Motion only on drawings marked `live` (Today, the current roster cell, the level-up overlay): breathing, blinking, a page turning every few seconds, the cat's tail, steam, the glow. Level up: the old stage fades into light while the new one grows out of a ring of light. All of it stops under prefers-reduced-motion (the level-up then shows only the new stage).
+- Locked levels: the room is hidden and the reader, the seat and the cat are a silhouette in `--lock` on `--lock-bg`.
+- Sizes: 132px on Today (the next level as a 34px silhouette at the end of the progress bar), 200px in the level-up overlay, 128px in the roster with name, hours and a one-line note.
+
+### Month view
+- In Napredek: the month name with arrows, four numbers in two columns (Bralni dnevi "29 od 31", Skupaj, Cilj dosežen, Najdaljši niz), then the calendar: goal days filled green, bookmark days in mark, under-goal days with a dot that grows with the minutes, days with no reading marked with a short hairline.
 
 ### Lists and roster
 - Book rows: cover, title, author, time read, play button, bottom hairline; hover underlines the title.
@@ -191,7 +199,7 @@ Soft and quiet: 10px slots and inputs, 14px buttons, 20px sheet tops and roster 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** change the look only in the theme block, and keep the kid's colours in `--kid-*`.
+- **Do** change the look only in the theme block, and keep the illustration's colours in `--il-*`.
 - **Do** give each state a shape as well as a colour (filled slot, outlined slot, bookmark, dashed empty).
 - **Do** keep all copy in standard Slovene with the plural helper (`plural(n, [1, 2, 3–4, 5+])`) and no-break spaces inside times.
 - **Do** keep the running timer near black with dimmed text.

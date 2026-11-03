@@ -1,26 +1,26 @@
 /* Bralni mentor rules: days, the streak with bookmarks, levels. No page code here, so node can test it (test/core.test.js). */
 (function (root) {
-  // [hours of reading, name, what the kid has at this level (kid.js draws it)].
-  // One kid grows from letter-catcher to the enlightened mentor: bronze ring for the first six, silver for the next six, gold for the last six.
+  // THE LEVEL TABLE: [hours of reading, name, one-line note]. Names are placeholders until Jan picks them; change them only here.
+  // kid.js draws the reader growing up across these 18 levels (bronze ring for the first six, silver for the next six, gold for the last six).
   const LEVELS = [
-    [0, 'Črkolovec', 'letters'],
-    [1, 'Listalec slikanic', 'picturebook'],
-    [3, 'Zlogovalec', 'syllables'],
-    [6, 'Mali knjižni molj', 'worm'],
-    [10, 'Lovilec zgodb', 'net'],
-    [15, 'Bralec pod odejo', 'blanket'],
-    [25, 'Knjižni molj z očali', 'glasses'],
-    [40, 'Nabiralec knjig', 'backpack'],
-    [60, 'Stalni gost knjižnice', 'card'],
-    [85, 'Požiralec poglavij', 'stack'],
-    [120, 'Popotnik med platnicami', 'hat'],
-    [170, 'Varuh bralne lučke', 'lamp'],
-    [240, 'Junak v plašču iz strani', 'cape'],
-    [330, 'Modri bralec', 'calm'],
-    [450, 'Lebdeči bralec', 'float'],
-    [600, 'Mojster tišine', 'orbit'],
-    [800, 'Bralni mentor', 'owl'],
-    [1000, 'Razsvetljeni', 'light'],
+    [0, 'Raven 1', 'Prva slikanica in prvi muc. Oba grizeta vogale.'],
+    [1, 'Raven 2', 'Muc zaspi po prvi strani. Ti po drugi.'],
+    [3, 'Raven 3', 'Muc je odkril volno. Branje bo počakalo.'],
+    [6, 'Raven 4', 'Ob oknu: ti bereš črke, muc gleda ptice.'],
+    [10, 'Raven 5', 'Muc se je ulegel na knjigo. Pravi, da je zanimiva.'],
+    [15, 'Raven 6', 'Muc ima škatlo, ti imaš novo poglavje.'],
+    [25, 'Raven 7', 'Slušalke so tvoje, muc jih ima raje.'],
+    [40, 'Raven 8', 'Muc preverja, ali knjige padajo. Padajo.'],
+    [60, 'Raven 9', 'Muc spet leži na knjigi. Tokrat na tvoji.'],
+    [85, 'Raven 10', 'Fotelj, kava in muc v naročju. Ne premikaj se.'],
+    [120, 'Raven 11', 'Muc na naslonjalu bere čez ramo.'],
+    [170, 'Raven 12', 'Kava se hladi, ker je zgodba boljša.'],
+    [240, 'Raven 13', 'Muc na oknu šteje ptice, ti strani.'],
+    [330, 'Raven 14', 'Muc je osvojil vrh knjižne omare.'],
+    [450, 'Raven 15', 'Lučka greje knjigo in muca hkrati.'],
+    [600, 'Raven 16', 'Muc ima zdaj svoja očala. In svojo knjigo.'],
+    [800, 'Raven 17', 'Stari prijatelji: ti, muc in prva slikanica.'],
+    [1000, 'Raven 18', 'Tisoč ur kasneje: soba je polna knjig in svetlobe.'],
   ];
   const MARK_EVERY = 7, MARK_MAX = 3;
 
@@ -56,7 +56,7 @@
     const h = sec / 3600; let i = 0;
     while (i + 1 < LEVELS.length && h >= LEVELS[i + 1][0]) i++;
     const next = LEVELS[i + 1];
-    return { i, name: LEVELS[i][1], icon: LEVELS[i][2], h, next: next ? next[0] : null, nextName: next ? next[1] : null,
+    return { i, name: LEVELS[i][1], note: LEVELS[i][2], h, next: next ? next[0] : null, nextName: next ? next[1] : null,
       frac: next ? (h - LEVELS[i][0]) / (next[0] - LEVELS[i][0]) : 1 };
   }
 

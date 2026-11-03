@@ -38,7 +38,7 @@
         "The One Block Rule: every colour, font, radius and shadow is a custom property in the theme block at the top of index.html; a new theme replaces only that block.",
         "The One Meaning Rule: accent is what you press, good is goal reached, mark is bookmarks and records, under is minutes under the goal.",
         "Space and one hairline separate sections; no cards.",
-        "The kid reader is coloured only by --kid-* variables and its tier ring."
+        "The level illustration (reader, cat, room) is coloured only by --il-* variables and its tier ring."
       ],
       "status": "Placeholder theme; Jan picks the final look from examples (3 Nov 2026)."
     }
