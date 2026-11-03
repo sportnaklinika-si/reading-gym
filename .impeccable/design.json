@@ -1,471 +1,72 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-03T09:48:06.582Z",
-  "title": "Design System: Reading Gym",
+  "generatedAt": "2026-11-03T16:50:00+01:00",
+  "title": "Design System: Bralni mentor",
   "extensions": {
     "colorMeta": {
-      "ribbon-navy": {
-        "role": "neutral",
-        "displayName": "Ribbon Navy",
-        "canonical": "#0B1024",
-        "tonalRamp": [
-          "#181E34",
-          "#27325E",
-          "#32448B",
-          "#3A54BA",
-          "#6378CA",
-          "#919ED4",
-          "#C0C7E2",
-          "#EBEDF5"
-        ]
-      },
-      "case-panel": {
-        "role": "neutral",
-        "displayName": "Case Panel",
-        "canonical": "#141B38",
-        "tonalRamp": [
-          "#1A1F33",
-          "#2A335B",
-          "#374686",
-          "#4158B3",
-          "#697BC4",
-          "#95A0D0",
-          "#C2C8E1",
-          "#EBEDF4"
-        ]
-      },
-      "case-panel-raised": {
-        "role": "neutral",
-        "displayName": "Case Panel Raised",
-        "canonical": "#1C2550",
-        "tonalRamp": [
-          "#1A1E33",
-          "#29325B",
-          "#364486",
-          "#4155B4",
-          "#6878C5",
-          "#949FD1",
-          "#C1C7E1",
-          "#EBEDF4"
-        ]
-      },
-      "seam": {
-        "role": "neutral",
-        "displayName": "Seam",
-        "canonical": "#283266",
-        "tonalRamp": [
-          "#1B1F32",
-          "#2C3359",
-          "#3A4683",
-          "#4657AF",
-          "#6C7AC0",
-          "#97A0CE",
-          "#C3C7DF",
-          "#ECEDF4"
-        ]
-      },
-      "bone": {
-        "role": "neutral",
-        "displayName": "Bone",
-        "canonical": "#EEF0F8",
-        "tonalRamp": [
-          "#1B2031",
-          "#2D3558",
-          "#3C4A81",
-          "#485CAC",
-          "#6E7EBE",
-          "#98A3CD",
-          "#C3C9DF",
-          "#ECEDF4"
-        ]
-      },
-      "muted-lilac": {
-        "role": "neutral",
-        "displayName": "Muted Lilac",
-        "canonical": "#A6ADCE",
-        "tonalRamp": [
-          "#1F212E",
-          "#333951",
-          "#464F76",
-          "#58649D",
-          "#7B84B2",
-          "#A0A7C5",
-          "#C8CBDB",
-          "#EDEEF2"
-        ]
-      },
-      "faint-lilac": {
-        "role": "neutral",
-        "displayName": "Faint Lilac",
-        "canonical": "#7C86B6",
-        "tonalRamp": [
-          "#1F212E",
-          "#343951",
-          "#474F76",
-          "#58649D",
-          "#7B85B2",
-          "#A1A7C4",
-          "#C8CBDA",
-          "#EDEEF2"
-        ]
-      },
-      "plate-gold": {
-        "role": "primary",
-        "displayName": "Plate Gold",
-        "canonical": "#F2BE4A",
-        "tonalRamp": [
-          "#3D2F10",
-          "#6F5315",
-          "#A67A16",
-          "#E2A212",
-          "#EAB643",
-          "#E9C77C",
-          "#EDDCB5",
-          "#F8F3E8"
-        ]
-      },
-      "plate-gold-light": {
-        "role": "primary",
-        "displayName": "Plate Gold Light",
-        "canonical": "#FFE39A",
-        "tonalRamp": [
-          "#40320C",
-          "#76590E",
-          "#B2830B",
-          "#F3B002",
-          "#F7C136",
-          "#F1CE74",
-          "#F2E0B0",
-          "#F9F4E6"
-        ]
-      },
-      "ink-on-gold": {
-        "role": "primary",
-        "displayName": "Ink on Gold",
-        "canonical": "#1A1405",
-        "tonalRamp": [
-          "#382E15",
-          "#66511F",
-          "#977726",
-          "#CC9D29",
-          "#D8B255",
-          "#DDC588",
-          "#E7DBBB",
-          "#F6F2E9"
-        ]
-      },
-      "enamel-green": {
-        "role": "secondary",
-        "displayName": "Enamel Green",
-        "canonical": "#34C27E",
-        "tonalRamp": [
-          "#173527",
-          "#246044",
-          "#2E8E60",
-          "#35C07D",
-          "#5FCE99",
-          "#8ED7B4",
-          "#BEE4D2",
-          "#EAF5F0"
-        ]
-      },
-      "ink-on-green": {
-        "role": "secondary",
-        "displayName": "Ink on Green",
-        "canonical": "#04170D",
-        "tonalRamp": [
-          "#143925",
-          "#1E6740",
-          "#24995B",
-          "#26CF76",
-          "#53DA93",
-          "#86DFB0",
-          "#BAE8D0",
-          "#E9F6EF"
-        ]
-      },
-      "ribbon-scarlet": {
-        "role": "secondary",
-        "displayName": "Ribbon Scarlet",
-        "canonical": "#E4483F",
-        "tonalRamp": [
-          "#3A1513",
-          "#691F1B",
-          "#9D2620",
-          "#D52A20",
-          "#DF564E",
-          "#E28883",
-          "#EABBB8",
-          "#F7E9E9"
-        ]
-      },
-      "ribbon-scarlet-light": {
-        "role": "secondary",
-        "displayName": "Ribbon Scarlet Light",
-        "canonical": "#FF8A7E",
-        "tonalRamp": [
-          "#40110C",
-          "#76180E",
-          "#B21B0B",
-          "#F31902",
-          "#F74836",
-          "#F17F74",
-          "#F2B6B0",
-          "#F9E8E6"
-        ]
-      },
-      "cobalt": {
-        "role": "tertiary",
-        "displayName": "Cobalt",
-        "canonical": "#5B85F0",
-        "tonalRamp": [
-          "#101D3C",
-          "#172F6E",
-          "#1940A4",
-          "#164FDE",
-          "#4674E6",
-          "#7E9CE7",
-          "#B6C5EC",
-          "#E8ECF7"
-        ]
-      },
-      "danger-coral": {
-        "role": "secondary",
-        "displayName": "Danger Coral",
-        "canonical": "#FF8577",
-        "tonalRamp": [
-          "#40110C",
-          "#76190E",
-          "#B21C0B",
-          "#F31B02",
-          "#F74A36",
-          "#F18174",
-          "#F2B7B0",
-          "#F9E8E6"
-        ]
-      },
-      "bronze": {
-        "role": "tertiary",
-        "displayName": "Bronze Plating",
-        "canonical": "#D08C58",
-        "tonalRamp": [
-          "#352418",
-          "#5F3E25",
-          "#8D5830",
-          "#BE7137",
-          "#CC8F61",
-          "#D6AE8F",
-          "#E3CFBF",
-          "#F5EFEB"
-        ]
-      },
-      "silver": {
-        "role": "tertiary",
-        "displayName": "Silver Plating",
-        "canonical": "#C9D1DD",
-        "tonalRamp": [
-          "#20252C",
-          "#36404E",
-          "#4B5B71",
-          "#5F7596",
-          "#8192AC",
-          "#A4B0C1",
-          "#CAD0D9",
-          "#EEEFF2"
-        ]
-      },
-      "reader-black": {
-        "role": "neutral",
-        "displayName": "Reader Black",
-        "canonical": "#04060E",
-        "tonalRamp": [
-          "#181E35",
-          "#25315F",
-          "#30438D",
-          "#3852BD",
-          "#6176CC",
-          "#909ED5",
-          "#BFC6E3",
-          "#EBEDF5"
-        ]
-      }
+      "paper": { "role": "neutral", "displayName": "Paper (placeholder)", "canonical": "#F6F5F2", "tonalRamp": ["#FFFFFF", "#F6F5F2", "#EEECE7", "#E1DED7"] },
+      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "#1F1E1C", "tonalRamp": ["#1F1E1C", "#67635C", "#726D64"] },
+      "accent": { "role": "primary", "displayName": "Accent (placeholder sage)", "canonical": "#2F5B4E", "tonalRamp": ["#2F5B4E", "rgba(47,91,78,.09)"] },
+      "good": { "role": "secondary", "displayName": "Goal reached", "canonical": "#2F7A52", "tonalRamp": ["#2F7A52", "rgba(47,122,82,.11)"] },
+      "mark": { "role": "secondary", "displayName": "Bookmarks and records", "canonical": "#B04A40", "tonalRamp": ["#B04A40", "rgba(176,74,64,.10)"] },
+      "under": { "role": "tertiary", "displayName": "Minutes under the goal", "canonical": "#7F8FB0" },
+      "tier-bronze": { "role": "accent", "displayName": "Bronze ring", "canonical": "#B98A63" },
+      "tier-silver": { "role": "accent", "displayName": "Silver ring", "canonical": "#A6AEB9" },
+      "tier-gold": { "role": "accent", "displayName": "Gold ring", "canonical": "#C7A04A" },
+      "reader-black": { "role": "neutral", "displayName": "Reading screen", "canonical": "#0C0C0D", "tonalRamp": ["#0C0C0D", "#161618", "#1B1B1D", "#262628"] }
     },
     "typographyMeta": {
-      "display": {
-        "displayName": "Display",
-        "purpose": "Screen titles and the level name."
-      },
-      "headline": {
-        "displayName": "Headline",
-        "purpose": "Panel, sheet and section titles."
-      },
-      "numeral": {
-        "displayName": "Numeral",
-        "purpose": "Streak, minutes, the running clock, record values; tabular figures."
-      },
-      "body": {
-        "displayName": "Body",
-        "purpose": "Sentences and hints."
-      },
-      "label": {
-        "displayName": "Label",
-        "purpose": "Meta lines, tabs, chips; sentence case."
-      }
+      "display": { "displayName": "Display", "purpose": "Screen titles, the level name, section and sheet titles, slot dates." },
+      "numeral": { "displayName": "Numeral", "purpose": "Streak count, today's minutes, the running clock, records; tabular figures." },
+      "body": { "displayName": "Body", "purpose": "Sentences and hints in the platform system sans." }
     },
     "shadows": [
-      {
-        "name": "panel-ambient",
-        "value": "inset 0 1px 0 rgba(255,255,255,.07), 0 12px 28px -18px rgba(0,0,0,.7)",
-        "purpose": "Panels and rows: light top edge plus soft lift."
-      },
-      {
-        "name": "gold-lift",
-        "value": "0 8px 20px -12px rgba(242,190,74,.8)",
-        "purpose": "Under primary buttons and play discs."
-      },
-      {
-        "name": "sheet",
-        "value": "inset 0 1px 0 rgba(255,255,255,.07), 0 -20px 50px -20px rgba(0,0,0,.7)",
-        "purpose": "Bottom sheets."
-      },
-      {
-        "name": "toast",
-        "value": "inset 0 1px 0 rgba(255,255,255,.07), 0 14px 34px -12px rgba(0,0,0,.75)",
-        "purpose": "Toasts above the tab bar."
-      }
+      { "name": "shadow", "value": "0 10px 30px -18px rgba(0,0,0,.35)", "purpose": "Book covers and the toast." },
+      { "name": "shadow-up", "value": "0 -20px 50px -24px rgba(0,0,0,.3)", "purpose": "Bottom sheets rising over the page." }
     ],
     "motion": [
-      {
-        "name": "ease-out-expo",
-        "value": "cubic-bezier(.16,1,.3,1)",
-        "purpose": "Every transition and entrance."
-      },
-      {
-        "name": "press",
-        "value": "press .9s: scale 1.35 to .96 to 1 with fade-in",
-        "purpose": "A pin, tick or cover being pressed in on a celebration."
-      },
-      {
-        "name": "glint",
-        "value": "a light band sweeps across a pin once (level-up) or every 3.6s (new pin not yet seen)",
-        "purpose": "Marks a newly earned pin until it is seen."
-      },
-      {
-        "name": "sheet-rise",
-        "value": "rise .38s",
-        "purpose": "Bottom sheets entering."
-      }
+      { "name": "ease", "value": "cubic-bezier(.16,1,.3,1)", "purpose": "Every transition and entrance." },
+      { "name": "thunk", "value": "0.7s, scale 1.8 to 0.93 to 1", "purpose": "A date slot or PREBRANO label pressing in once." },
+      { "name": "press", "value": "0.9s, scale 1.25 to 0.97 to 1", "purpose": "The kid arriving in the level-up overlay; the goal tick." }
     ],
     "breakpoints": [
-      {
-        "name": "column",
-        "value": "560px"
-      }
-    ]
+      { "name": "column", "value": "560px" }
+    ],
+    "narrative": {
+      "northStar": "The Quiet Reading Log",
+      "rules": [
+        "The One Block Rule: every colour, font, radius and shadow is a custom property in the theme block at the top of index.html; a new theme replaces only that block.",
+        "The One Meaning Rule: accent is what you press, good is goal reached, mark is bookmarks and records, under is minutes under the goal.",
+        "Space and one hairline separate sections; no cards.",
+        "The kid reader is coloured only by --kid-* variables and its tier ring."
+      ],
+      "status": "Placeholder theme; Jan picks the final look from examples (3 Nov 2026)."
+    }
   },
   "components": [
     {
       "name": "Primary Button",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "The one main action on a screen or sheet.",
-      "html": "<button class=\"ds-btn-primary\">Start reading</button>",
-      "css": ".ds-btn-primary{min-height:48px;padding:12px 16px;border:1px solid #F2BE4A;border-radius:14px;background:#F2BE4A;color:#1A1405;font:650 16px -apple-system,Segoe UI,Roboto,sans-serif;box-shadow:0 8px 20px -12px rgba(242,190,74,.8);transition:transform .15s cubic-bezier(.16,1,.3,1),filter .2s;cursor:pointer}.ds-btn-primary:hover{filter:brightness(1.08)}.ds-btn-primary:active{transform:scale(.98)}.ds-btn-primary:focus-visible{outline:2px solid #F2BE4A;outline-offset:3px}"
+      "description": "The one pressed action on a screen or sheet.",
+      "html": "<button class=\"ds-btn\">Začni brati</button>",
+      "css": ".ds-btn{min-height:48px;width:100%;border:1px solid #2F5B4E;background:#2F5B4E;color:#fff;border-radius:14px;padding:12px 16px;font:650 16px/1.2 -apple-system,Segoe UI,sans-serif}"
     },
     {
-      "name": "Secondary Button",
-      "kind": "button",
-      "refersTo": "button-secondary",
-      "description": "Other actions next to a primary one.",
-      "html": "<button class=\"ds-btn\">Add time by hand</button>",
-      "css": ".ds-btn{min-height:48px;padding:12px 16px;border:1px solid #283266;border-radius:14px;background:#1C2550;color:#EEF0F8;font:650 16px -apple-system,Segoe UI,Roboto,sans-serif;box-shadow:inset 0 1px 0 rgba(255,255,255,.07);cursor:pointer}.ds-btn:hover{filter:brightness(1.08)}.ds-btn:focus-visible{outline:2px solid #F2BE4A;outline-offset:3px}"
-    },
-    {
-      "name": "Play Disc",
-      "kind": "button",
-      "refersTo": "play-disc",
-      "description": "Starts the timer for a book.",
-      "html": "<button class=\"ds-play\" aria-label=\"Start reading\"><svg viewBox=\"0 0 20 20\" width=\"20\" height=\"20\"><path d=\"M5.5 3.8v12.4c0 .7.8 1.1 1.4.7l9.6-6.2c.6-.4.6-1.2 0-1.5L6.9 3.1c-.6-.4-1.4 0-1.4.7z\" fill=\"currentColor\"/></svg></button>",
-      "css": ".ds-play{width:50px;height:50px;border-radius:50%;border:0;background:#F2BE4A;color:#1A1405;display:grid;place-items:center;box-shadow:0 8px 18px -10px rgba(242,190,74,.9);cursor:pointer}.ds-play svg{margin-left:3px}.ds-play:active{transform:scale(.94)}.ds-play:focus-visible{outline:2px solid #F2BE4A;outline-offset:3px}"
-    },
-    {
-      "name": "Text Field",
-      "kind": "input",
-      "refersTo": "input",
-      "description": "Title, author, minutes.",
-      "html": "<label class=\"ds-field\">Title<input type=\"text\" placeholder=\"The Old Man and the Sea\"></label>",
-      "css": ".ds-field{display:grid;gap:6px;font:600 .85rem -apple-system,Segoe UI,Roboto,sans-serif;color:#A6ADCE}.ds-field input{min-height:48px;padding:13px 12px;border:1px solid #283266;border-radius:12px;background:#0B1024;color:#EEF0F8;font:400 1rem -apple-system,Segoe UI,Roboto,sans-serif}.ds-field input:focus{outline:none;border-color:#F2BE4A;box-shadow:0 0 0 3px rgba(242,190,74,.18)}"
-    },
-    {
-      "name": "Tab Bar",
-      "kind": "nav",
-      "description": "Today, Books, Stats.",
-      "html": "<nav class=\"ds-tabs\"><button aria-current=\"page\">Today</button><button>Books</button><button>Stats</button></nav>",
-      "css": ".ds-tabs{display:grid;grid-template-columns:repeat(3,1fr);background:rgba(11,16,36,.92);border-top:1px solid #283266;padding:4px 8px}.ds-tabs button{position:relative;min-height:52px;background:none;border:0;color:#A6ADCE;font:600 .75rem -apple-system,Segoe UI,Roboto,sans-serif;cursor:pointer}.ds-tabs button:hover{color:#EEF0F8}.ds-tabs button[aria-current=page]{color:#F2BE4A}.ds-tabs button[aria-current=page]::before{content:\"\";position:absolute;top:-5px;left:50%;margin-left:-15px;width:30px;height:3px;border-radius:0 0 3px 3px;background:#F2BE4A}"
-    },
-    {
-      "name": "Chips",
-      "kind": "chip",
-      "refersTo": "chip-new",
-      "description": "New pin, PR and book status.",
-      "html": "<span class=\"ds-chip ds-new\">New pin</span> <span class=\"ds-chip ds-pr\">PR</span> <span class=\"ds-chip ds-st\">Reading now</span>",
-      "css": ".ds-chip{display:inline-flex;align-items:center;font:650 .75rem -apple-system,Segoe UI,Roboto,sans-serif;border-radius:99px;padding:2px 9px}.ds-new{background:#F2BE4A;color:#1A1405}.ds-pr{background:rgba(228,72,63,.16);color:#FF8A7E;box-shadow:inset 0 0 0 1px rgba(228,72,63,.45)}.ds-st{background:#1C2550;color:#A6ADCE;box-shadow:inset 0 0 0 1px #283266}"
-    },
-    {
-      "name": "Panel",
-      "kind": "card",
-      "refersTo": "panel",
-      "description": "One idea per panel: today, streak, chart, pin case.",
-      "html": "<section class=\"ds-panel\"><h2>Today</h2><p>12 min of 20 min</p></section>",
-      "css": ".ds-panel{background:#141B38;border:1px solid #283266;border-radius:20px;padding:16px;color:#EEF0F8;box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 12px 28px -18px rgba(0,0,0,.7)}.ds-panel h2{margin:0 0 4px;font:700 1.3rem ui-rounded,sans-serif}.ds-panel p{margin:0;color:#A6ADCE;font:400 16px -apple-system,Segoe UI,Roboto,sans-serif}"
-    },
-    {
-      "name": "Bookmark Ribbons",
+      "name": "Date Slot Week",
       "kind": "custom",
-      "description": "Three ribbon slots hanging from the streak panel; filled means earned.",
-      "html": "<div class=\"ds-rib\"><svg viewBox=\"0 0 18 40\" width=\"18\" height=\"40\"><path d=\"M1 0h16v38l-8-7-8 7z\" fill=\"#E4483F\"/><path d=\"M5.5 0v31\" stroke=\"rgba(255,255,255,.22)\" stroke-width=\"1.2\"/></svg><svg viewBox=\"0 0 18 40\" width=\"18\" height=\"40\"><path d=\"M1.75 0v36.4l7.25-6.3 7.25 6.3V0\" fill=\"none\" stroke=\"#3A4580\" stroke-width=\"1.5\" stroke-dasharray=\"3 2.4\"/></svg></div>",
-      "css": ".ds-rib{display:flex;gap:7px;padding:0 16px 12px;background:#141B38;border-radius:0 0 12px 12px;width:max-content}"
+      "refersTo": "date-slot-goal",
+      "description": "Seven days on Today: empty, goal reached, saved by a bookmark, today open.",
+      "html": "<div class=\"ds-week\"><span class=\"ds-slot ds-good\">1.11.</span><span class=\"ds-slot ds-saved\">2.11.</span><span class=\"ds-slot ds-blank\">4.11.</span><span class=\"ds-slot ds-open\">3.11.</span></div>",
+      "css": ".ds-week{display:flex;gap:8px;padding:12px;background:#F6F5F2}.ds-slot{display:grid;place-items:center;width:42px;height:32px;border-radius:10px;font:700 11.5px/1 Rubik,sans-serif}.ds-good{color:#2F7A52;background:rgba(47,122,82,.11)}.ds-saved{color:#B04A40;background:rgba(176,74,64,.10)}.ds-blank{color:#726D64;border-bottom:1.5px dashed #E1DED7;border-radius:0}.ds-open{color:#2F5B4E;box-shadow:inset 0 0 0 1.5px #2F5B4E}"
+    },
+    {
+      "name": "Book Row",
+      "kind": "card",
+      "refersTo": "play-button",
+      "description": "A book being read: cloth cover, title, author, time read, round play button, bottom hairline.",
+      "html": "<div class=\"ds-row\"><span class=\"ds-cover\">A</span><div><b>Alamut</b><br><small>Vladimir Bartol · 2 h 34 min branja</small></div><button class=\"ds-play\" aria-label=\"Začni brati\"></button></div>",
+      "css": ".ds-row{display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;padding:14px 0;border-bottom:1px solid #E1DED7;background:#F6F5F2;font:16px -apple-system,Segoe UI,sans-serif;color:#1F1E1C}.ds-row small{color:#67635C}.ds-cover{display:grid;place-items:center;width:48px;height:70px;border-radius:3px 5px 5px 3px;background:#2F5B4E;color:#F1DDB0;font:700 18px Rubik,sans-serif}.ds-play{width:46px;height:46px;border-radius:50%;border:0;background:#2F5B4E}"
     }
-  ],
-  "narrative": {
-    "northStar": "The Award Cabinet",
-    "overview": "Reading progress is kept like a sports trophy case. The ground is the deep navy of a medal case’s velvet. Every one of the 18 levels is a cloisonné enamel pin with a plated metal body, a field of its own enamel colour and an icon struck in metal. Bookmarks that save a streak are red silk ribbons. The interface around these objects stays a clean phone app: standard tabs, rows, sheets and buttons, in the cabinet’s palette.\n\nThe app is read in the evening beside a paper book, so it is dark on purpose. While the timer runs the screen drops to near black. Density is calm: one panel per idea, generous rows, large numerals for the numbers that matter (minutes today, streak, level).\n\nIllustrations and pins are authored vector art. Controls never imitate metal; gold on a button is a flat colour.",
-    "keyCharacteristics": [
-      "Ribbon-navy ground with slightly lighter enamel panels and a one-pixel light top edge.",
-      "Gold is what you press; green means goal reached; scarlet means bookmarks and records; cobalt means minutes under the goal.",
-      "Rubik Bold for names and numbers, the system sans for everything else.",
-      "Level pins change shape by tier: round bronze, hexagonal silver, scalloped gold.",
-      "State is carried in shape as well as colour."
-    ],
-    "rules": [
-      {
-        "name": "The One Meaning Rule",
-        "body": "Each working colour has one job. Green is never used for \"nice\", gold is never used for decoration, scarlet is never used for errors.",
-        "section": "colors"
-      },
-      {
-        "name": "The Metal Stays In The Pin Rule",
-        "body": "Plating gradients exist only inside pin and rosette illustrations. Buttons, bars and discs are flat.",
-        "section": "colors"
-      },
-      {
-        "name": "The No Kicker Rule",
-        "body": "No small label above a heading. Level number and hours read sit in a meta line under the level name.",
-        "section": "typography"
-      }
-    ],
-    "dos": [
-      "**Do** give every new state a distinct shape as well as a colour (disc, ribbon, dashed ring, gold ring).",
-      "**Do** keep the running timer screen near black (#04060E) with dimmed text so it can stay on beside a book.",
-      "**Do** draw new icons as 24-unit stroke SVG (2px, round caps) so they can be struck into a pin.",
-      "**Do** keep text at least 4.5:1 on its panel and tap targets at least 44px."
-    ],
-    "donts": [
-      "**Don’t** put gradients that imitate metal on buttons, bars or discs; metal lives in pins and the rosette only.",
-      "**Don’t** nest cards: no tinted tiles inside a panel.",
-      "**Don’t** use emoji or text glyphs as icons (no ✓ or ▶); use the drawn SVG.",
-      "**Don’t** add a small label above a heading.",
-      "**Don’t** pulse or loop motion on the reading screen; the clock already shows it is running."
-    ]
-  }
+  ]
 }

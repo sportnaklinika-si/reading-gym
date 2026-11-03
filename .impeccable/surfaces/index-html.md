@@ -2,21 +2,21 @@
 version: 1
 slug: "index-html"
 primary_target: "index.html"
-related_targets: ["app.js"]
+related_targets: ["app.js","kid.js"]
 ---
 
-Scope: the whole phone app (Today, Books, Stats, the reading timer, sheets, celebrations). Visitor mode: Operate. Audience: Jan, reading paper books in the evening with the phone beside the book; job: start a session in one tap, see today, streak and level at a glance. Run unattended (owner away, asked the agent to decide); direction = assigned roll, not user-picked.
+Scope: the whole phone app, renamed Bralni mentor (Today, Books, Progress, the reading timer, sheets, celebrations). Visitor mode: Operate. Audience: Jan, reading paper books in the evening with the phone beside the book; job: start a session in one tap, see today, streak and level at a glance. Jan's pinned brief (3 Nov 2026): name Bralni mentor, Slovene UI, levels shown as one kid character who grows and slowly becomes enlightened. Mid-build Jan pinned the visual direction "simplicity, clean vibe, smart vibe, zen mode" and will choose the final look from examples himself, so the build ships a neutral placeholder theme in one swappable :root block. The library-card world rolled first (seed below) survives only as the date-slot structure; its violet stamp palette was dropped.
 
 ## Direction contract
 
-THESIS: Reading progress as an award cabinet: every level is a cloisonné enamel pin you collect, bookmarks are red silk ribbons that save a streak. Refuses the habit-tracker default of grey cards, one accent and progress rings standing in for reward.
+THESIS: A calm reading log: every reading day is a dated slot that fills when the goal is reached, and one kid reader grows across 18 levels from letter-catcher to the enlightened mentor. Refuses the habit-tracker default of grey cards, one accent and rings standing in for reward; refuses boxes: sections are separated by space and one hairline.
 
-OWN-WORLD: Ribbon-navy ground (#0B1024 family) with enamel-panel surfaces and a one-pixel plated top edge. Gold plate is the action and selection colour; enamel green means goal reached; ribbon scarlet means bookmarks and records; cobalt carries minutes under goal. Bronze, silver and gold plating appear only on pins and the ladder. Rubik Bold (die-struck lettering) for names and numbers, system sans for everything else.
+OWN-WORLD: Pending Jan's pick. Placeholder: paper ground (#F6F5F2), white surfaces, ink text, one deep sage accent for what you press, green for goal reached, brick for bookmarks and records, slate blue for minutes under the goal; tier rings bronze, silver, gold. Every colour, font, radius and shadow is a custom property in the single theme block at the top of index.html; the kid is a line drawing coloured only by --kid-* variables.
 
-STORY: Jan opens the app, sees today's minutes, the streak with its ribbons and the current pin, taps the gold play button on a book, and later sees the pin case fill up row by row.
+STORY: Jan opens the app, sees the kid at the current level, today's minutes and the week of dated slots, taps the play button on a book, and later watches the kid gain glasses, a lamp, a cape of pages and finally float in light.
 
-FIRST VIEWPORT: Today. Top: current pin at 76 px beside the level name in Rubik, a plated progress bar ending at the next pin's blank. Then today's goal ring with minutes and the words left; then the streak panel with three ribbon bookmarks hanging from its top edge and seven day marks that differ in shape by state; then Reading now rows with a gold play disc. Bottom tab bar, gold for the open tab.
+FIRST VIEWPORT: Today. Top: the kid at 96 px in a tier-ringed disc beside the level name, meta line, a thin progress bar ending at the next level's silhouette. Then today's minutes with a thin ring; then the streak with three paper bookmarks and seven dated slots (goal days filled green with their date); then Trenutno berem as a hairline list with round play buttons. Bottom tab bar.
 
-FORM: Enamel pins and competition ribbons, candidate 5 of 7 (1 bumper plates, 2 athletics track, 3 tri-band paperback jackets, 4 bookcloth and foil spines, 5 enamel pins and ribbons, 6 library date card, 7 chalk workout board). seed:a12d9986dc38a0ce. Signature move: the ladder as a pin case, three tiers of six (round bronze, hexagonal silver, scalloped gold), earned pins in enamel, locked ones as unplated blanks; a level-up presses the new pin in with one glint. Raises: state carried in shape as well as colour (from emission-line rail); a change stays highlighted in place until seen (from boarding pass); finished books as a dense cover wall (from event catalog); minutes as dot size on a fixed ramp in the calendar (from star atlas).
+FORM: Library date-due card, candidate 7 of 7 (1 Bralna značka booklet, 2 Čebelica picture books, 3 Ciciban magazine covers, 4 school reading diary, 5 star chart, 6 summer-camp badges, 7 library date-due card), reduced by Jan's zen pin to its structure. seed:95dc0c007c86d057. Signature move: the date slot; a day turns from an empty ruled slot into a filled slot with its date, pressed in once when the goal is reached; a finished book gets a PREBRANO date label. Stamp tilt and ink grain exist as theme switches (--stamp-tilt, --stamp-mask), off in the placeholder. Raise from the character goods catalog challenger: the level roster, each stage with a name plate, hours and a one-line note, locked stages as silhouettes.
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance

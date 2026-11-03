@@ -1,25 +1,26 @@
-/* Reading Gym rules: days, the streak with bookmarks, levels. No page code here, so node can test it (test/core.test.js). */
+/* Bralni mentor rules: days, the streak with bookmarks, levels. No page code here, so node can test it (test/core.test.js). */
 (function (root) {
-  // [hours of reading, title, badge icon]. Bronze badges for the first six, silver for the next six, gold for the last six.
+  // [hours of reading, name, what the kid has at this level (kid.js draws it)].
+  // One kid grows from letter-catcher to the enlightened mentor: bronze ring for the first six, silver for the next six, gold for the last six.
   const LEVELS = [
-    [0, 'Warm-up Reader', 'shoe'],
-    [1, 'Stretching Rookie', 'stretch'],
-    [3, 'Light Jogger', 'jog'],
-    [6, 'Brain Cardio', 'heart'],
-    [10, 'Page Sprinter', 'bolt'],
-    [15, 'Chapter Lifter', 'dumbbell'],
-    [25, 'Mental Deadlift', 'barbell'],
-    [40, 'Plot Powerlifter', 'plates'],
-    [60, 'Iron Mind', 'kettlebell'],
-    [85, 'Library Beast', 'flex'],
-    [120, 'Page Marathoner', 'flag'],
-    [170, 'Ultra Reader', 'mountain'],
-    [240, 'Reading Olympian', 'torch'],
-    [330, 'Gold Medalist', 'medal'],
-    [450, 'World Record Holder', 'trophy'],
-    [600, 'Hall of Fame', 'star'],
-    [800, 'Living Legend', 'laurel'],
-    [1000, 'The Enlightened', 'sun'],
+    [0, 'Črkolovec', 'letters'],
+    [1, 'Listalec slikanic', 'picturebook'],
+    [3, 'Zlogovalec', 'syllables'],
+    [6, 'Mali knjižni molj', 'worm'],
+    [10, 'Lovilec zgodb', 'net'],
+    [15, 'Bralec pod odejo', 'blanket'],
+    [25, 'Knjižni molj z očali', 'glasses'],
+    [40, 'Nabiralec knjig', 'backpack'],
+    [60, 'Stalni gost knjižnice', 'card'],
+    [85, 'Požiralec poglavij', 'stack'],
+    [120, 'Popotnik med platnicami', 'hat'],
+    [170, 'Varuh bralne lučke', 'lamp'],
+    [240, 'Junak v plašču iz strani', 'cape'],
+    [330, 'Modri bralec', 'calm'],
+    [450, 'Lebdeči bralec', 'float'],
+    [600, 'Mojster tišine', 'orbit'],
+    [800, 'Bralni mentor', 'owl'],
+    [1000, 'Razsvetljeni', 'light'],
   ];
   const MARK_EVERY = 7, MARK_MAX = 3;
 

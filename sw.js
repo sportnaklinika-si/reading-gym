@@ -1,6 +1,6 @@
 // Keeps the app working without internet. Network first, so a new version arrives on the next open with a connection.
-const CACHE = 'reading-gym-v2';
-const FILES = ['./', 'index.html', 'app.js', 'core.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'fonts/rubik-bold.woff2'];
+const CACHE = 'bralni-mentor-v3';
+const FILES = ['./', 'index.html', 'app.js', 'core.js', 'kid.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'fonts/rubik-bold.woff2'];
 
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener('activate', e => {

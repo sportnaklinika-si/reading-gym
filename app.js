@@ -1,4 +1,4 @@
-/* Reading Gym: screens, the reading timer and storage on the phone. The rules (streak, levels) are in core.js. */
+/* Bralni mentor: screens, the reading timer and storage on the phone. The rules (streak, levels) are in core.js, the kid reader in kid.js. */
 'use strict';
 const $ = s => document.querySelector(s);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -10,7 +10,7 @@ const DEMO = location.hash.startsWith('#demo');   // example data for screenshot
 let S = null, view = DEMO && /stats|books/.test(location.hash) ? location.hash.slice(6) : 'today', calMonth = null, installEvt = null, ask = null, tickT = null, pendingCover = null, pendingImport = null;
 const covers = {};   // book id -> object URL of the cover photo
 
-// ---------- storage: IndexedDB on the phone, localStorage only if that fails
+// ---------- storage: IndexedDB on the phone, localStorage only if that fails (names unchanged since Reading Gym, so old data keeps working)
 const idb = (() => {
   let p;
   const open = () => p || (p = new Promise((res, rej) => {
@@ -48,18 +48,27 @@ function save() {
   chain = chain.then(() => idb.set('state', snapS)).catch(() => lsSet('rg-state', JSON.stringify(snapS)));
 }
 
-// ---------- numbers
+// ---------- numbers and words in Slovene
+// Four forms: 1, 2, 3 and 4, everything else (0, 5 ...). Also 101, 102, 103 follow 1, 2, 3.
+const plural = (n, f) => { const m = Math.abs(n) % 100; return f[m === 1 ? 0 : m === 2 ? 1 : m === 3 || m === 4 ? 2 : 3]; };
+const DAYS = ['dan', 'dneva', 'dnevi', 'dni'], BOOKS = ['knjiga', 'knjigi', 'knjige', 'knjig'];
+const nf = (n, d = 0) => n.toLocaleString('sl-SI', { minimumFractionDigits: d, maximumFractionDigits: d });
 const totalSec = () => S.sessions.reduce((a, s) => a + s.sec, 0);
 const daySec = k => S.sessions.reduce((a, s) => a + (s.day === k ? s.sec : 0), 0);
 const goalNow = () => RG.goalFor(S.goals, today());
 const streakNow = () => RG.streak(S.sessions, S.goals, today());
 const bookById = id => S.books.find(b => b.id === id);
-const bookName = b => b ? (b.title || 'Untitled book') : 'Deleted book';
-const fmtMin = sec => { const m = Math.floor(sec / 60); return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : ''); };
+const bookName = b => b ? (b.title || 'Knjiga brez naslova') : 'Izbrisana knjiga';
+const NB = ' ';   // no-break space: "2 h 34 min" never splits over two lines
+const fmtMin = sec => { const m = Math.floor(sec / 60); return m < 60 ? m + NB + 'min' : Math.floor(m / 60) + NB + 'h' + (m % 60 ? NB + (m % 60) + NB + 'min' : ''); };
 const fmtClock = sec => { sec = Math.floor(sec); const p = n => String(n).padStart(2, '0'), h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60); return h ? h + ':' + p(m) + ':' + p(sec % 60) : m + ':' + p(sec % 60); };
-const fmtHours = sec => { const h = sec / 3600; return (h < 10 ? h.toFixed(1) : Math.round(h)) + ' h'; };
-const fmtDay = k => RG.keyDate(k).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-const wd = k => RG.keyDate(k).toLocaleDateString('en-GB', { weekday: 'short' });
+const fmtHours = sec => { const h = sec / 3600, r = Math.round(h * 10) / 10; return (h < 10 && r % 1 ? nf(r, 1) : nf(Math.round(h))) + NB + 'h'; };
+const fmtDay = k => RG.keyDate(k).toLocaleDateString('sl-SI', { day: 'numeric', month: 'short', year: 'numeric' });
+const longDay = k => RG.keyDate(k).toLocaleDateString('sl-SI', { weekday: 'long', day: 'numeric', month: 'long' });
+const WD = ['ned', 'pon', 'tor', 'sre', 'čet', 'pet', 'sob'];
+const wd = k => WD[RG.keyDate(k).getDay()];
+const stampDate = k => { const d = RG.keyDate(k); return d.getDate() + '.' + (d.getMonth() + 1) + '.'; };
+const tilt = k => ((Number(k.slice(8)) * 37 + Number(k.slice(5, 7)) * 11) % 9) - 4;   // every stamp lands a little crooked, the same way each time
 const vibrate = p => { try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} };
 
 // ---------- the timer. It only runs while the app is on screen.
@@ -80,7 +89,7 @@ function startRun(bookId) {
   S.run = { id: uid(), book: bookId, segs: [], at: now, ok: now, beat: now, why: null };
   save(); wake(true); showReader();
 }
-// While "Still reading?" is open, time after the question never counts.
+// While "Še bereš?" is open, time after the question never counts.
 function pauseRun(why, end) {
   const r = S.run; if (!r || !r.at) return;
   end = end || ask || Date.now();
@@ -100,9 +109,9 @@ function finishRun() {
   S.run = null;
   if (total >= MIN_SAVE) for (const [day, sec] of Object.entries(parts)) if (sec >= 1) S.sessions.push({ id: uid(), run: r.id, book: r.book, day, sec: Math.round(sec), manual: false });
   save(); hideReader(); render();
-  if (total >= MIN_SAVE) cheer(before, total); else toast('Under a minute, so it wasn’t saved.');
+  if (total >= MIN_SAVE) cheer(before, total); else toast('Manj kot minuta branja, zato ni shranjeno.');
 }
-function discardRun() { S.run = null; ask = null; save(); wake(false); hideReader(); render(); toast('Session thrown away.'); }
+function discardRun() { S.run = null; ask = null; save(); wake(false); hideReader(); render(); toast('Branje je zavrženo.'); }
 
 function tick() {
   const r = S.run; if (!r) return;
@@ -120,27 +129,27 @@ function showReader() { $('#reader').hidden = false; paintReader(); clearInterva
 function hideReader() { $('#reader').hidden = true; clearInterval(tickT); tickT = null; }
 const RD_C = 2 * Math.PI * 54;
 const WHY = {
-  pause: 'Paused.',
-  left: 'Paused because you left the app or the screen went off.',
-  closed: 'The app was closed while the timer ran. The time up to then is kept.',
-  asleep: 'Nobody answered, so the timer stopped when the question appeared.',
+  pause: 'Premor.',
+  left: 'Premor: aplikacija ni bila več na zaslonu ali pa se je zaslon ugasnil.',
+  closed: 'Aplikacija se je zaprla med branjem. Čas do takrat je shranjen.',
+  asleep: 'Nihče ni odgovoril, zato se je štoparica ustavila v trenutku vprašanja.',
 };
 function paintReader() {
   const r = S.run; if (!r || $('#reader').hidden) return;
   const sec = runSec(r), goal = goalNow() * 60, done = daySec(today()) + sec, f = Math.min(1, done / goal), b = bookById(r.book);
   $('#rd-book').textContent = bookName(b);
   const cv = $('#rd-cover'); if (cv.dataset.book !== r.book + (covers[r.book] || '')) { cv.dataset.book = r.book + (covers[r.book] || ''); cv.innerHTML = cover(b, 52); }
-  $('#rd-live').classList.toggle('off', !r.at); $('#rd-livetxt').textContent = r.at ? 'Reading' : 'Paused';
+  $('#rd-live').classList.toggle('off', !r.at); $('#rd-livetxt').textContent = r.at ? 'Bereš' : 'Premor';
   $('#rd-clock').textContent = fmtClock(sec);
-  $('#rd-state').textContent = r.at ? 'this session' : 'paused';
+  $('#rd-state').textContent = r.at ? 'to branje' : 'premor';
   const arc = $('#rd-arc');
   arc.setAttribute('stroke-dasharray', RD_C); arc.setAttribute('stroke-dashoffset', RD_C * (1 - f));
   arc.classList.toggle('done', f >= 1); arc.style.strokeOpacity = f > 0 ? 1 : 0;
   const t = $('#rd-today'); t.classList.toggle('done', f >= 1);
-  t.innerHTML = f >= 1 ? IC.tick + '<span>Daily goal done · ' + fmtMin(done) + ' today</span>' : Math.ceil((goal - done) / 60) + ' min to today’s goal';
+  t.innerHTML = f >= 1 ? IC.tick + '<span>Dnevni cilj dosežen · danes ' + fmtMin(done) + '</span>' : 'Še ' + Math.ceil((goal - done) / 60) + ' min do današnjega cilja';
   $('#rd-run').hidden = !r.at; $('#rd-paused').hidden = !!r.at;
   let why = WHY[r.why] || WHY.pause;
-  if (r.why === 'left' && !('wakeLock' in navigator)) why += ' If the screen turns off by itself, give it longer in your phone’s display settings (Auto-Lock or Screen timeout).';
+  if (r.why === 'left' && !('wakeLock' in navigator)) why += ' Če se zaslon ugaša sam, mu v nastavitvah telefona podaljšaj čas do samodejnega zaklepanja.';
   $('#rd-why').textContent = why;
   $('#rd-ask').hidden = !ask;
 }
@@ -153,13 +162,13 @@ window.addEventListener('pagehide', () => { if (S) pauseRun('left'); });
 
 // ---------- rewards
 function snap() { const st = streakNow(); return { lvl: RG.level(totalSec()).i, tick: daySec(today()) >= goalNow() * 60, pr: RG.longestRun(S.sessions), marks: st.marks, cur: st.cur }; }
-let freshTick = false;   // the goal was reached a moment ago: the tick on Today presses in once
+let freshTick = false;   // the goal was reached a moment ago: today's date stamp presses in once
 function cheer(b, sec) {
   const a = snap(), msgs = [];
-  if (!b.tick && a.tick) { msgs.push(['Daily goal done. Streak: ' + a.cur + (a.cur === 1 ? ' day.' : ' days.'), 'tick']); freshTick = true; render(); freshTick = false; }
-  if (a.marks > b.marks) msgs.push(['You earned a bookmark. It saves your streak on a day off.', 'ribbon']);
-  if (a.pr > b.pr && b.pr > 0) msgs.push(['New PR: your longest session yet, ' + fmtMin(a.pr) + '.', 'pr']);
-  if (!msgs.length) msgs.push(['Saved ' + fmtMin(sec) + '.']);
+  if (!b.tick && a.tick) { msgs.push(['Dnevni cilj dosežen. Niz: ' + a.cur + ' ' + plural(a.cur, DAYS) + '.', 'tick']); freshTick = true; render(); freshTick = false; }
+  if (a.marks > b.marks) msgs.push(['Nov zaznamek. Reši niz na prost dan.', 'mark']);
+  if (a.pr > b.pr && b.pr > 0) msgs.push(['Nov osebni rekord: najdaljše branje doslej, ' + fmtMin(a.pr) + '.', 'pr']);
+  if (!msgs.length) msgs.push(['Shranjeno: ' + fmtMin(sec) + '.']);
   msgs.forEach(m => toast(m[0], m[1]));
   if (a.lvl > b.lvl) levelUp(a.lvl);
 }
@@ -172,85 +181,39 @@ function nextToast() {
   el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';
   setTimeout(nextToast, 3200);
 }
-function party(html) { const el = $('#party'); el.innerHTML = html + '<button class="btn primary" data-act="party-close">Nice</button>'; el.hidden = false; }
-// enamel chips flying off the pin when it is pressed in
+function party(html) { const el = $('#party'); el.innerHTML = html + '<button class="btn primary" data-act="party-close">Super</button>'; el.hidden = false; }
+// paper confetti in the stamp-pad colours
+const CONFETTI = ['var(--accent)', 'var(--good)', 'var(--mark)', 'var(--under)', 'var(--tier-3)', 'var(--kid-accent)'];
 const sparks = () => Array.from({ length: 14 }, (_, k) => {
-  const a = k / 14 * 2 * Math.PI + 0.2, d = 96 + (k % 3) * 16;
-  return `<i class="spark" style="--dx:${Math.round(Math.cos(a) * d)}px;--dy:${Math.round(Math.sin(a) * d)}px;background:${ENAMEL[k % 6]};animation-delay:${(0.28 + (k % 4) * 0.05).toFixed(2)}s"></i>`;
+  const a = k / 14 * 2 * Math.PI + 0.2, d = 100 + (k % 3) * 16;
+  return `<i class="spark" style="--dx:${Math.round(Math.cos(a) * d)}px;--dy:${Math.round(Math.sin(a) * d)}px;background:${CONFETTI[k % 6]};animation-delay:${(0.28 + (k % 4) * 0.05).toFixed(2)}s"></i>`;
 }).join('');
 function levelUp(i) {
   const L = RG.LEVELS[i], n = RG.LEVELS[i + 1];
   vibrate([80, 60, 80, 60, 160]);
-  party(`<div class="hero"><span class="pin-wrap press">${pin(i, 156)}</span>${sparks()}</div><h2>${esc(L[1])}</h2><p>A new pin for your case: level ${i + 1} of ${RG.LEVELS.length}, ${L[0]} hours of reading.${n ? ' Next: ' + esc(n[1]) + ' at ' + n[0] + '&nbsp;h.' : ' This is the top of the ladder.'}</p>`);
+  party(`<div class="hero"><span class="kid-wrap press">${KID(i, 188)}</span>${sparks()}</div><h2>${esc(L[1])}</h2><p>${esc(KID_NOTES[i])}</p><p>Stopnja ${i + 1} od ${RG.LEVELS.length}, ${L[0]} h branja.${n ? ' Naslednja: ' + esc(n[1]) + ' pri ' + n[0] + '&nbsp;h.' : ' To je vrh poti.'}</p>`);
 }
 
 // ---------- drawing bits
-const ICONS = {
-  shoe: '<path d="M3 16.5V11l3.5-2 2 2.5h3l4.5 2 4 1.2c1.2.4 1.5 1.3 1.5 2.3v.5H3z"/><path d="M3 19.5h18M9.5 11.5l1-1.5M12 12l1-1.5"/>',
-  stretch: '<circle cx="12" cy="5" r="1.7"/><path d="M6 2.8l6 4.2 6-4.2M12 7v7l-4 6.5M12 14l4 6.5"/>',
-  jog: '<circle cx="14.5" cy="4.5" r="1.7"/><path d="M8 10.5l3.5-2.5 3 1.5 1.5 3.5h3M11.5 8l-2 5.5 3.5 2.5-1 5M9.5 13.5L6.5 19H3"/>',
-  heart: '<path d="M12 20s-7.5-4.6-7.5-10.2A4.1 4.1 0 0 1 12 7.4a4.1 4.1 0 0 1 7.5 2.4C19.5 15.4 12 20 12 20z"/><path d="M7.5 12.5h2.6l1.4-2.6 2 4.6 1.4-2h1.6"/>',
-  bolt: '<path d="M13.5 2.5L5 13.5h6l-1.5 8 8.5-11h-6z"/>',
-  dumbbell: '<path d="M6.5 7v10M17.5 7v10M3.5 9.5v5M20.5 9.5v5M6.5 12h11"/>',
-  barbell: '<path d="M1.5 12h21M5 7.5v9M8 9v6M19 7.5v9M16 9v6"/>',
-  plates: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5.5"/><circle cx="12" cy="12" r="1.6"/>',
-  kettlebell: '<path d="M8.5 9.5V8a3.5 3.5 0 0 1 7 0v1.5"/><path d="M7 9.5h10l1.2 3.2A6.5 6.5 0 0 1 12 21a6.5 6.5 0 0 1-6.2-8.3z"/>',
-  flex: '<path d="M4 19.5c1.5-5.5 3.5-10 6.5-12.5l2.2 2-1.7 2.3.8 2c2.3-2 5.7-2.6 7.7-.6 1.2 2.6-.2 6.8-4 6.8z"/><path d="M12 13.8c1.2.5 2.4.6 3.5.3"/>',
-  flag: '<path d="M5.5 21.5V3.5"/><path d="M5.5 4h12.5l-2.6 4 2.6 4H5.5"/>',
-  mountain: '<path d="M2 20.5l7.5-13 4.5 7 2.5-3.5 5.5 9.5z"/><path d="M7.5 11l2 1.5 2-1"/>',
-  torch: '<path d="M9 11h6l-1.6 10h-2.8z"/><path d="M12 2.5c2.3 2.4 3.4 4.2 3.4 5.6a3.4 3.4 0 0 1-6.8 0c0-1.4 1.1-3.2 3.4-5.6z"/>',
-  medal: '<path d="M8 2.5l4 7 4-7"/><circle cx="12" cy="15" r="6"/><path d="M10.6 13.4l1.4-1.1v5.4"/>',
-  trophy: '<path d="M7 3.5h10V8a5 5 0 0 1-10 0z"/><path d="M7 5.5H4.2a3 3 0 0 0 3.2 4M17 5.5h2.8a3 3 0 0 1-3.2 4M12 13v4M8.5 21h7M9.5 17h5v4h-5z"/>',
-  star: '<path d="M12 2.8l2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3-4.6-4.4 6.3-.9z"/>',
-  laurel: '<path d="M8.5 20.5C4.5 18 2.8 13 4 8M15.5 20.5C19.5 18 21.2 13 20 8"/><path d="M4.6 16.4l-2.3.2M3.6 12.6l-2.1-.9M4 9l-1.6-1.8M19.4 16.4l2.3.2M20.4 12.6l2.1-.9M20 9l1.6-1.8"/><path d="M12 6.5l1.3 2.6 2.9.4-2.1 2 .5 2.9-2.6-1.4-2.6 1.4.5-2.9-2.1-2 2.9-.4z"/>',
-  sun: '<circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/>',
-};
-// Every level is an enamel pin: plated body in the tier's metal (round bronze, hexagonal silver, scalloped gold),
-// a field of its own enamel colour and the icon struck in metal. Locked levels are unplated blanks.
-const ENAMEL = ['#2F5FD0', '#1B9AA6', '#1E9E68', '#D8423A', '#7B4FC9', '#262C4A'];
-const METAL = ['#F7CFA8', '#F4F7FB', '#FFE9A8'];
-const tierOf = i => Math.min(2, Math.floor(i / 6));
-const enamelOf = i => ENAMEL[(i + tierOf(i) * 2) % 6];
 const f1 = n => +n.toFixed(2);
-const circ = r => `M${f1(24 - r)} 24a${r} ${r} 0 1 0 ${f1(2 * r)} 0a${r} ${r} 0 1 0 ${f1(-2 * r)} 0Z`;
-const poly = (r, n) => 'M' + Array.from({ length: n }, (_, k) => { const a = (k / n) * 2 * Math.PI - Math.PI / 2; return f1(24 + r * Math.cos(a)) + ' ' + f1(24 + r * Math.sin(a)); }).join('L') + 'Z';
-const scallop = (cx, cy, R, n, rs) => {
-  const p = k => { const a = (k / n) * 2 * Math.PI - Math.PI / 2; return f1(cx + R * Math.cos(a)) + ' ' + f1(cy + R * Math.sin(a)); };
-  return 'M' + p(0) + Array.from({ length: n }, (_, k) => `A${rs} ${rs} 0 0 1 ${p(k + 1)}`).join('') + 'Z';
-};
-const SHAPE = [
-  { body: circ(22.4), field: circ(18.2), wire: circ(15.8) },
-  { body: poly(22.6, 6), field: poly(18.4, 6), wire: poly(15.9, 6) },
-  { body: scallop(24, 24, 20.2, 16, 4.6), field: circ(17), wire: circ(14.8) },
-];
-function pinInner(i, off) {
-  const t = tierOf(i), s = SHAPE[t], ic = ICONS[RG.LEVELS[i][2]];
-  if (off) return `<path d="${s.body}" style="fill:var(--surface2);stroke:var(--seam);stroke-width:1.4;stroke-linejoin:round"/><g transform="translate(12 12)" style="fill:none;stroke:#59639C;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round">${ic}</g>`;
-  return `<path d="${s.body}" fill="url(#pl${t})" stroke="url(#pl${t})" stroke-width="1.6" stroke-linejoin="round"/>`
-    + `<path d="${s.field}" fill="${enamelOf(i)}"/><path d="${s.field}" fill="none" stroke="rgba(0,0,0,.3)" stroke-width="1.3"/>`
-    + `<path d="${s.wire}" fill="none" stroke="${METAL[t]}" stroke-opacity=".5" stroke-width=".8"/>`
-    + `<path d="M11.4 18.6A14 14 0 0 1 19.6 10.6" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="2.4" stroke-linecap="round"/>`
-    + `<g transform="translate(12 12.7)" style="fill:none;stroke:rgba(0,0,0,.32);stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round">${ic}</g>`
-    + `<g transform="translate(12 12)" style="fill:none;stroke:${METAL[t]};stroke-width:2;stroke-linecap:round;stroke-linejoin:round">${ic}</g>`;
-}
-const pin = (i, size, off) => `<svg class="pin" width="${size}" height="${size}" viewBox="0 0 48 48" aria-hidden="true">${pinInner(i, off)}</svg>`;
-// a red silk bookmark ribbon; an empty one is a dashed outline waiting to be earned
-const ribbon = on => `<svg viewBox="0 0 18 40" aria-hidden="true">${on ? '<path d="M1 0h16v38l-8-7-8 7z" fill="url(#silk)"/><path d="M5.5 0v31" stroke="rgba(255,255,255,.22)" stroke-width="1.2"/>' : '<path d="M1.75 0v36.4l7.25-6.3 7.25 6.3V0" fill="none" stroke="#3A4580" stroke-width="1.5" stroke-dasharray="3 2.4"/>'}</svg>`;
+// a red paper bookmark; an empty one is a dashed outline waiting to be earned
+const mark = on => `<svg viewBox="0 0 18 40" aria-hidden="true">${on ? '<path d="M1 0h16v38l-8-7-8 7z" style="fill:var(--mark)"/><circle cx="9" cy="8" r="2.2" style="fill:var(--bg)"/>' : '<path d="M1.75 0v36.4l7.25-6.3 7.25 6.3V0" style="fill:none;stroke:var(--line);stroke-width:1.5;stroke-dasharray:3 2.4"/>'}</svg>`;
+const MINI_MARK = '<svg viewBox="0 0 6 11" aria-hidden="true"><path d="M0 0h6v11l-3-2.6L0 11z" fill="currentColor"/></svg>';
 const IC = {
   plus: '<svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
   minus: '<svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14"/></svg>',
   prev: '<svg class="ic" viewBox="0 0 24 24"><path d="M14.5 6l-6 6 6 6"/></svg>',
   next: '<svg class="ic" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"/></svg>',
-  tick: '<svg class="ic" viewBox="0 0 24 24" style="width:18px;height:18px"><circle cx="12" cy="12" r="10" style="fill:currentColor;stroke:none"/><path d="M7.5 12.5l3 3 6-6.5" style="stroke:#04170D;stroke-width:2.4"/></svg>',
+  tick: '<svg class="ic" viewBox="0 0 24 24" style="width:18px;height:18px"><circle cx="12" cy="12" r="10" style="fill:currentColor;stroke:none"/><path d="M7.5 12.5l3 3 6-6.5" style="stroke:var(--on-good);stroke-width:2.4"/></svg>',
 };
 const TOAST_IC = {
-  tick: '<svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="12" fill="#34C27E"/><path d="M8 13.5l3.4 3.4L18.5 9.5" fill="none" stroke="#04170D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-  ribbon: '<svg viewBox="0 0 26 26" aria-hidden="true"><path d="M8 1h10v23l-5-4.3L8 24z" fill="url(#silk)"/></svg>',
-  pr: '<svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="12" fill="#E4483F"/><text x="13" y="17.2" text-anchor="middle" style="font:700 11px var(--display);fill:#fff">PR</text></svg>',
+  tick: '<svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="12" style="fill:var(--good)"/><path d="M8 13.5l3.4 3.4L18.5 9.5" style="fill:none;stroke:var(--on-good);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round"/></svg>',
+  mark: '<svg viewBox="0 0 26 26" aria-hidden="true"><path d="M8 1h10v23l-5-4.3L8 24z" style="fill:var(--mark)"/><circle cx="13" cy="6" r="1.6" style="fill:var(--toast-bg)"/></svg>',
+  pr: '<svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="12" style="fill:var(--mark)"/><text x="13" y="17.2" text-anchor="middle" style="font:700 10.5px var(--display);fill:var(--on-accent)">OR</text></svg>',
 };
 const initials = b => (bookName(b).match(/[\p{L}\p{N}]+/gu) || ['?']).slice(0, 2).map(w => w[0].toUpperCase()).join('');
-// Without a photo a book gets a cloth binding in one of six colours, picked from its id, with its initials in gold foil.
-const CLOTH = ['#7A2532', '#22346E', '#1F5A45', '#7D5A1E', '#4E2D66', '#1D5660'];
+// Without a photo a book gets a cloth binding in one of six colours, picked from its id, with its initials in foil.
+const CLOTH = [1, 2, 3, 4, 5, 6].map(n => 'var(--cloth-' + n + ')');
 const clothOf = b => { let h = 7; for (const ch of b ? b.id + bookName(b) : '?') h = (h * 31 + ch.charCodeAt(0)) >>> 0; return CLOTH[h % CLOTH.length]; };
 function cover(b, w) {
   const fill = w === 'fill', st = fill ? '' : `width:${w}px;height:${Math.round(w * 1.45)}px;`;
@@ -260,81 +223,70 @@ function cover(b, w) {
 function ring(sec, goalMin, size) {
   const C = 2 * Math.PI * 26, f = Math.min(1, sec / (goalMin * 60)), done = f >= 1;
   return `<svg class="ring${done ? ' done' : ''}" width="${size}" height="${size}" viewBox="0 0 64 64" aria-hidden="true"><circle class="trk" cx="32" cy="32" r="26"/><circle class="arc" cx="32" cy="32" r="26" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - f)}" transform="rotate(-90 32 32)" style="stroke-opacity:${f > 0 ? 1 : 0}"/>`
-    + (done ? `<g${freshTick ? ' class="tickdisc"' : ''}><circle cx="32" cy="32" r="17" style="fill:var(--green)"/><path d="M24.5 32.5l5 5 10-11" style="fill:none;stroke:var(--on-green);stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round"/></g>`
+    + (done ? `<g${freshTick ? ' class="tickdisc"' : ''}><circle cx="32" cy="32" r="17" style="fill:var(--good)"/><path d="M24.5 32.5l5 5 10-11" style="fill:none;stroke:var(--on-good);stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round"/></g>`
       : `<text class="num1" x="32" y="35.5" text-anchor="middle">${Math.floor(sec / 60)}</text><text class="u" x="32" y="45" text-anchor="middle">min</text>`) + '</svg>';
 }
-const STATUS = { tick: 'Goal reached', saved: 'Saved by a bookmark', miss: 'Missed', open: 'Today, not done yet' };
-// Day marks differ in shape, not only colour: full disc, ribbon, dashed ring, gold ring.
-const MARK = {
-  tick: '<circle cx="17" cy="17" r="15" style="fill:var(--green)"/><path d="M11 17.5l4 4 8-8.5" style="fill:none;stroke:var(--on-green);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round"/>',
-  saved: '<circle cx="17" cy="17" r="14.2" style="fill:none;stroke:var(--scarlet);stroke-width:1.6"/><path d="M12.6 9.5h8.8v15l-4.4-3.8-4.4 3.8z" fill="url(#silk)"/>',
-  miss: '<circle cx="17" cy="17" r="14.2" style="fill:none;stroke:var(--faint);stroke-width:1.5;stroke-dasharray:2.6 3"/>',
-  open: '<circle cx="17" cy="17" r="14.2" style="fill:none;stroke:var(--gold);stroke-width:1.8"/><circle cx="17" cy="17" r="3" style="fill:var(--gold)"/>',
-  none: '<circle cx="17" cy="17" r="14.2" style="fill:none;stroke:var(--seam);stroke-width:1.4"/>',
-};
+const STATUS = { tick: 'cilj dosežen', saved: 'rešeno z zaznamkom', miss: 'cilj ni dosežen', open: 'danes, še ne' };
+// A day on the due-date card: an empty ruled slot, or a tilted rubber stamp with its date (green for the goal, red when a bookmark saved it).
 function dayDot(k, s, isToday) {
   if (isToday && !s) s = 'open';
-  return `<div class="wd${isToday ? ' is-today' : ''}"><svg class="mk" viewBox="0 0 34 34" role="img" aria-label="${esc(wd(k) + ': ' + (STATUS[s] || 'no goal yet'))}">${MARK[s] || MARK.none}</svg>${wd(k)}</div>`;
+  const lab = stampDate(k), r = `--r:${tilt(k)}deg`;
+  const slot = s === 'tick' ? `<span class="slot stamp${isToday && freshTick ? ' thunk' : ''}" style="${r}">${lab}</span>`
+    : s === 'saved' ? `<span class="slot stamp saved" style="${r}">${MINI_MARK}${lab}</span>`
+    : s === 'open' ? `<span class="slot open">${lab}</span>` : `<span class="slot blank">${lab}</span>`;
+  return `<div class="wd${isToday ? ' is-today' : ''}" role="img" aria-label="${esc(longDay(k) + ': ' + (STATUS[s] || 'še brez cilja'))}">${slot}<span>${wd(k)}</span></div>`;
 }
 const PLAY = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5.5 3.8v12.4c0 .7.8 1.1 1.4.7l9.6-6.2c.6-.4.6-1.2 0-1.5L6.9 3.1c-.6-.4-1.4 0-1.4.7z" fill="currentColor"/></svg>';
 function bookCard(b, t, play) {
-  const sub = b.status === 'finished' ? 'Finished ' + fmtDay(b.done) + (t ? ' · ' + fmtMin(t.sec) : '') : t ? fmtMin(t.sec) + ' read' : 'Not started';
-  return `<div class="book" data-act="open" data-id="${b.id}" role="button" tabindex="0">${cover(b, 48)}<div style="min-width:0; display:grid; gap:2px"><h3>${esc(bookName(b))}</h3>${b.author ? `<p>${esc(b.author)}</p>` : ''}<p class="t">${sub}</p></div>${play ? `<button class="play" data-act="start" data-id="${b.id}" aria-label="Start reading ${esc(bookName(b))}">${PLAY}</button>` : ''}</div>`;
+  const sub = b.status === 'finished' ? 'Prebrana ' + fmtDay(b.done) + (t ? ' · ' + fmtMin(t.sec) : '') : t ? fmtMin(t.sec) + ' branja' : 'Še nezačeta';
+  return `<div class="book" data-act="open" data-id="${b.id}" role="button" tabindex="0">${cover(b, 48)}<div style="min-width:0; display:grid; gap:2px"><h3>${esc(bookName(b))}</h3>${b.author ? `<p>${esc(b.author)}</p>` : ''}<p class="t">${sub}</p></div>${play ? `<button class="play" data-act="start" data-id="${b.id}" aria-label="Začni brati: ${esc(bookName(b))}">${PLAY}</button>` : ''}</div>`;
 }
-const shelfItem = (b, t) => `<button class="shelf" data-act="open" data-id="${b.id}">${cover(b, 'fill')}<b>${esc(bookName(b))}</b><small>${b.done ? fmtDay(b.done) : ''}${t ? '<br>' + fmtMin(t.sec) : ''}</small></button>`;
-// empty state: an open book with its red ribbon and the first (bronze) pin resting beside it
-const EMPTY_ART = `<svg viewBox="0 0 170 116" aria-hidden="true"><ellipse cx="82" cy="104" rx="62" ry="6" fill="rgba(0,0,0,.35)"/>
-  <path d="M18 30Q83 17 148 30V98Q83 87 18 98Z" fill="#22346E"/>
-  <path d="M24 27Q55 18 82 30V93Q55 83 24 91Z" fill="#F1EBDB"/><path d="M84 30Q111 18 142 27V91Q111 83 84 93Z" fill="#E6DDC6"/>
-  <path d="M83 30V93" stroke="#C9BD9F" stroke-width="1.5"/>
-  <path d="M32 40Q53 34 74 41M32 49Q53 43 74 50M32 58Q53 52 74 59M32 67Q53 61 64 66M92 41Q113 34 134 40M92 50Q113 43 134 49M92 59Q113 52 134 58M92 68Q113 61 124 64" fill="none" stroke="#CDBF9F" stroke-width="2.2" stroke-linecap="round"/>
-  <path d="M87 24h8v84l-4-4.6-4 4.6z" fill="url(#silk)"/>
-  <g transform="translate(116 64) scale(.92)">${pinInner(0)}</g></svg>`;
+const shelfItem = (b, t) => `<button class="shelf" data-act="open" data-id="${b.id}">${cover(b, 'fill')}${b.done ? `<span class="done-stamp" aria-hidden="true">PREBRANO<br>${stampDate(b.done)}</span>` : ''}<b>${esc(bookName(b))}</b><small>${b.done ? fmtDay(b.done) : ''}${t ? '<br>' + fmtMin(t.sec) : ''}</small></button>`;
 
 // ---------- screens
 const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 function installCard() {
   if (standalone() || DEMO || lsGet('rg-install-hide')) return '';
-  const how = isIOS ? 'In Safari, tap the Share button (the square with an arrow), then <b>Add to Home Screen</b>. Do it before you start: on iPhone the browser and the home-screen app keep separate data.'
-    : installEvt ? 'Install it and it gets its own icon, like any other app.' : 'Open the browser menu (⋮) and tap <b>Add to Home screen</b> or <b>Install app</b>.';
-  return `<section class="panel install"><h2>Put Reading Gym on your home screen</h2><p>${how}</p><div class="btns${installEvt ? ' two' : ''}">${installEvt ? '<button class="btn primary" data-act="install">Install</button>' : ''}<button class="btn ghost" data-act="install-hide">Hide this</button></div></section>`;
+  const how = isIOS ? 'V Safariju tapni gumb Deli (kvadrat s puščico) in nato <b>Dodaj na začetni zaslon</b>. Naredi to, preden začneš: na iPhonu brskalnik in aplikacija na začetnem zaslonu hranita ločene podatke.'
+    : installEvt ? 'Namesti ga in dobil bo svojo ikono, kot vsaka druga aplikacija.' : 'Odpri meni brskalnika (tri pikice) in tapni <b>Dodaj na začetni zaslon</b> ali <b>Namesti aplikacijo</b>.';
+  return `<section class="panel install"><h2>Dodaj Bralnega mentorja na začetni zaslon</h2><p>${how}</p><div class="btns${installEvt ? ' two' : ''}">${installEvt ? '<button class="btn primary" data-act="install">Namesti</button>' : ''}<button class="btn ghost" data-act="install-hide">Skrij</button></div></section>`;
 }
-// The level reached last time the pin case was open. A newer pin glints on Today until the case is opened.
+// The level reached last time the roster was open. A newer level glows on Today until the roster is opened.
 const seenLvl = () => { const v = lsGet('rg-seen-lvl'); return v == null ? null : Number(v); };
-const emptyBooks = () => `<section class="panel empty">${EMPTY_ART}<h2>Your first book</h2><p>Add the book you’re reading. A photo of the cover or just the title is enough.</p><button class="btn primary" data-act="add">Add a book</button></section>`;
+const emptyBooks = () => `<section class="panel empty">${KID(1, 120)}<h2>Tvoja prva knjiga</h2><p>Dodaj knjigo, ki jo bereš. Dovolj je fotografija platnice ali samo naslov.</p><button class="btn primary" data-act="add">Dodaj knjigo</button></section>`;
 function vToday() {
   const tot = totalSec(), L = RG.level(tot), st = streakNow(), t = today(), tsec = daySec(t), goal = goalNow(), done = tsec >= goal * 60;
   const reading = S.books.filter(b => b.status === 'reading'), BT = RG.bookTotals(S.sessions);
   const left = L.next != null ? L.next * 3600 - tot : 0, toMark = RG.MARK_EVERY - st.earn;
   const week = Array.from({ length: 7 }, (_, i) => RG.addDays(t, i - 6));
   const fresh = DEMO ? location.hash === '#demo-new' : seenLvl() != null && L.i > seenLvl();
-  return `${DEMO ? '<p class="demo">Example data, nothing is saved</p>' : ''}${installCard()}
-  <button class="lvl" data-act="tab" data-tab="stats" data-to="ladder" aria-label="${esc(L.name)}, level ${L.i + 1} of ${RG.LEVELS.length}. Open the pin case.">
-    <span class="pin-wrap${fresh ? ' glint' : ''}">${pin(L.i, 76)}</span>
-    <div style="min-width:0"><h1>${esc(L.name)}</h1><p class="meta"><span>Level ${L.i + 1} of ${RG.LEVELS.length}</span><span aria-hidden="true">·</span><span>${tot < 3600 ? fmtMin(tot) : fmtHours(tot)} read</span>${fresh ? '<span class="chip new">New pin</span>' : ''}</p>
-    ${L.next != null ? `<div class="trackrow"><div class="track"><i style="width:${(L.frac * 100).toFixed(1)}%"></i></div>${pin(L.i + 1, 30, true)}</div><p class="sub"><b>${left < 3600 ? Math.ceil(left / 60) + ' min' : fmtHours(left)}</b> to ${esc(L.nextName)}</p>` : '<p class="sub">The top of the ladder. Every pin is yours.</p>'}</div></button>
+  return `${DEMO ? '<p class="demo">Vzorčni podatki, nič se ne shrani</p>' : ''}${installCard()}
+  <button class="lvl" data-act="tab" data-tab="stats" data-to="ladder" aria-label="${esc(L.name)}, stopnja ${L.i + 1} od ${RG.LEVELS.length}. Odpri pot do razsvetljenja.">
+    <span class="kid-wrap${fresh ? ' glow-new' : ''}">${KID(L.i, 92)}</span>
+    <div style="min-width:0"><h1>${esc(L.name)}</h1><p class="meta"><span>Stopnja ${L.i + 1} od ${RG.LEVELS.length}</span><span aria-hidden="true">·</span><span>${tot < 3600 ? fmtMin(tot) : fmtHours(tot)} branja</span>${fresh ? '<span class="chip new">Nova stopnja</span>' : ''}</p>
+    ${L.next != null ? `<div class="trackrow"><div class="track"><i style="width:${(L.frac * 100).toFixed(1)}%"></i></div>${KID(L.i + 1, 32, true)}</div><p class="sub">Še <b>${left < 3600 ? Math.ceil(left / 60) + ' min' : fmtHours(left)}</b> do stopnje ${esc(L.nextName)}</p>` : '<p class="sub">Vrh poti. Vse stopnje so tvoje.</p>'}</div></button>
   ${S.books.length ? '' : emptyBooks()}
-  <section class="panel today">${ring(tsec, goal, 96)}<div><h2>${done ? 'Goal done today' : 'Today'}</h2><p><b>${fmtMin(tsec)}</b> ${done ? 'read' : 'of ' + goal + ' min'}</p><p>${done ? 'Goal ' + goal + ' min. See you tomorrow.' : Math.ceil((goal * 60 - tsec) / 60) + ' min to go'}</p></div></section>
-  <section class="panel streak"><div class="ribbons" role="img" aria-label="Bookmarks: ${st.marks} of ${RG.MARK_MAX}">${[0, 1, 2].map(i => ribbon(i < st.marks)).join('')}</div>
-    <div class="streak-top"><b>${st.cur}</b><span>day streak</span></div>
-    <p class="hint">${st.marks >= RG.MARK_MAX ? 'All 3 bookmarks earned. Each one saves your streak on a day off.' : toMark + ' more goal ' + (toMark === 1 ? 'day' : 'days') + ' to earn a bookmark. A bookmark saves your streak on a day off.'}</p>
+  <section class="panel today">${ring(tsec, goal, 96)}<div><h2>${done ? 'Cilj dosežen' : 'Danes'}</h2><p><b>${fmtMin(tsec)}</b> ${done ? 'branja' : 'od ' + goal + ' min'}</p><p>${done ? 'Dnevni cilj: ' + goal + ' min. Se vidiva jutri.' : 'Še ' + Math.ceil((goal * 60 - tsec) / 60) + ' min'}</p></div></section>
+  <section class="panel streak"><div class="marks" role="img" aria-label="Zaznamki: ${st.marks} od ${RG.MARK_MAX}">${[0, 1, 2].map(i => mark(i < st.marks)).join('')}</div>
+    <div class="streak-top"><b>${st.cur}</b><span>${plural(st.cur, DAYS)} zapored</span></div>
+    <p class="hint">${st.marks >= RG.MARK_MAX ? 'Vsi trije zaznamki so tvoji. Vsak reši niz na prost dan.' : 'Še ' + toMark + ' ' + plural(toMark, DAYS) + ' z doseženim ciljem do novega zaznamka. Zaznamek reši niz na prost dan.'}</p>
     <div class="week">${week.map(k => dayDot(k, st.days[k], k === t)).join('')}</div></section>
-  ${reading.length ? `<h2 class="sec">Reading now <span>${reading.length}</span></h2><div class="books">${reading.map(b => bookCard(b, BT[b.id], true)).join('')}</div><button class="add" data-act="add">${IC.plus}Add a book</button>`
-    : S.books.length ? `<h2 class="sec">Reading now</h2><section class="panel empty"><p>No book on the go. Pick one up again from Books, or add a new one.</p><button class="btn primary" data-act="add">Add a book</button></section>` : ''}`;
+  ${reading.length ? `<h2 class="sec">Trenutno berem <span>${reading.length}</span></h2><div class="books">${reading.map(b => bookCard(b, BT[b.id], true)).join('')}</div><button class="add" data-act="add">${IC.plus}Dodaj knjigo</button>`
+    : S.books.length ? `<h2 class="sec">Trenutno berem</h2><section class="panel empty"><p>Trenutno ne bereš nobene knjige. Vzemi eno iz Knjig ali dodaj novo.</p><button class="btn primary" data-act="add">Dodaj knjigo</button></section>` : ''}`;
 }
 function vBooks() {
   const BT = RG.bookTotals(S.sessions), g = st => S.books.filter(b => b.status === st);
   const fin = g('finished').sort((a, b) => (b.done || '').localeCompare(a.done || ''));
   const year = String(new Date().getFullYear()), finYear = fin.filter(b => (b.done || '').startsWith(year)).length;
   const list = (title, arr, play) => arr.length ? `<h2 class="sec">${title} <span>${arr.length}</span></h2><div class="books">${arr.map(b => bookCard(b, BT[b.id], play)).join('')}</div>` : '';
-  if (!S.books.length) return `<h1 class="title">Books</h1>${emptyBooks()}`;
-  return `<h1 class="title">Books</h1><p class="lede">${fin.length ? fin.length + ' finished · ' + finYear + ' in ' + year : 'Nothing finished yet'}</p>
-  ${list('Reading now', g('reading'), true)}
-  <button class="add" data-act="add">${IC.plus}Add a book</button>
-  <h2 class="sec">Finished${fin.length ? ` <span>${fin.length}</span>` : ''}</h2>
-  ${fin.length ? `<div class="wall">${fin.map(b => shelfItem(b, BT[b.id])).join('')}</div>` : '<p class="shelf-empty">Finished books land here, cover by cover.</p>'}
-  ${list('Put aside', g('aside'), false)}`;
+  if (!S.books.length) return `<h1 class="title">Knjige</h1>${emptyBooks()}`;
+  return `<h1 class="title">Knjige</h1><p class="lede">${fin.length ? fin.length + ' ' + plural(fin.length, ['prebrana', 'prebrani', 'prebrane', 'prebranih']) + ' · ' + finYear + ' v letu ' + year : 'Še nič prebranega'}</p>
+  ${list('Trenutno berem', g('reading'), true)}
+  <button class="add" data-act="add">${IC.plus}Dodaj knjigo</button>
+  <h2 class="sec">Prebrane${fin.length ? ` <span>${fin.length}</span>` : ''}</h2>
+  ${fin.length ? `<div class="wall">${fin.map(b => shelfItem(b, BT[b.id])).join('')}</div>` : '<p class="shelf-empty">Prebrane knjige se zbirajo tukaj, platnica za platnico.</p>'}
+  ${list('Odložene', g('aside'), false)}`;
 }
 function weekChart(t, goal) {
   const mon = RG.addDays(t, -((RG.keyDate(t).getDay() + 6) % 7));
@@ -343,52 +295,54 @@ function weekChart(t, goal) {
   const W = 320, H = 150, top = 22, base = 124, CW = 290, max = Math.max(goal, ...mins) * 1.15, y = v => base - (v / max) * (base - top), bw = 24, step = CW / 7;
   const bars = keys.map((k, i) => {
     const x = i * step + (step - bw) / 2, v = mins[i], hit = v >= RG.goalFor(S.goals, k), h = base - y(v);
-    return (v > 0 ? `<path d="M${f1(x)} ${base}V${f1(y(v) + 6)}q0-6 6-6h${bw - 12}q6 0 6 6V${base}Z" style="fill:${hit ? 'var(--green)' : 'var(--cobalt)'}"/>${h > 0 ? `<text class="v" x="${f1(x + bw / 2)}" y="${f1(y(v) - 6)}" text-anchor="middle">${Math.round(v)}</text>` : ''}` : '')
+    return (v > 0 ? `<path d="M${f1(x)} ${base}V${f1(y(v) + 6)}q0-6 6-6h${bw - 12}q6 0 6 6V${base}Z" style="fill:${hit ? 'var(--good)' : 'var(--under)'}"/>${h > 0 ? `<text class="v" x="${f1(x + bw / 2)}" y="${f1(y(v) - 6)}" text-anchor="middle">${Math.round(v)}</text>` : ''}` : '')
       + `<text x="${f1(x + bw / 2)}" y="${base + 18}" text-anchor="middle"${k === t ? ' class="v"' : ''}>${wd(k)}</text>`;
   }).join('');
-  return `<section class="panel chart"><div class="head"><h2>This week</h2><span class="muted num" style="font-size:.85rem">${fmtMin(mins.reduce((a, b) => a + b, 0) * 60)} · last week ${fmtMin(lastWeek)}</span></div>
-  <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Minutes read each day this week"><line x1="0" x2="${CW}" y1="${base}" y2="${base}" style="stroke:var(--seam)"/>${bars}<line x1="0" x2="${CW}" y1="${f1(y(goal))}" y2="${f1(y(goal))}" style="stroke:var(--gold-lt);stroke-opacity:.75;stroke-dasharray:4 4"/><text class="g" x="${CW + 5}" y="${f1(y(goal) + 3.5)}">goal</text></svg>
-  <p class="hint">Minutes a day. Green: goal reached. Blue: read, but under the goal of ${goal} min.</p></section>`;
+  return `<section class="panel chart"><div class="head"><h2>Ta teden</h2><span class="muted num" style="font-size:.85rem">${fmtMin(mins.reduce((a, b) => a + b, 0) * 60)} · prejšnji teden ${fmtMin(lastWeek)}</span></div>
+  <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Minute branja po dnevih ta teden"><line x1="0" x2="${CW}" y1="${base}" y2="${base}" style="stroke:var(--line)"/>${bars}<line x1="0" x2="${CW}" y1="${f1(y(goal))}" y2="${f1(y(goal))}" style="stroke:var(--accent);stroke-opacity:.6;stroke-dasharray:4 4"/><text class="g" x="${CW + 5}" y="${f1(y(goal) + 3.5)}">cilj</text></svg>
+  <div class="legend"><span><i style="background:var(--good)"></i>cilj dosežen</span><span><i style="background:var(--under)"></i>branje pod ciljem ${goal} min</span></div></section>`;
 }
 function calendar(st) {
   const t = today(), now = RG.keyDate(t), DT = RG.dayTotals(S.sessions);
   if (!calMonth) calMonth = [now.getFullYear(), now.getMonth()];
   const [y, m] = calMonth, first = new Date(y, m, 1), n = new Date(y, m + 1, 0).getDate(), lead = (first.getDay() + 6) % 7;
-  const cells = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map(h => `<span class="h">${h}</span>`);
+  const cells = ['pon', 'tor', 'sre', 'čet', 'pet', 'sob', 'ned'].map(h => `<span class="h">${h}</span>`);
   for (let i = 0; i < lead; i++) cells.push('<span></span>');
   for (let d = 1; d <= n; d++) {
     const k = RG.dayKey(new Date(y, m, d)), s = k > t ? 'future' : st.days[k] || (k === t ? 'today' : ''), min = (DT[k] || 0) / 60;
-    // minutes under the goal show as a blue dot that grows with the time read
-    const dot = s !== 'tick' && s !== 'future' && min > 0 ? `<i style="width:${f1(3 + 5 * Math.min(1, min / RG.goalFor(S.goals, k)))}px;height:${f1(3 + 5 * Math.min(1, min / RG.goalFor(S.goals, k)))}px"></i>` : '';
-    cells.push(`<span class="c ${s}" title="${esc((STATUS[s] || '') + (min >= 1 ? (STATUS[s] ? ', ' : '') + Math.round(min) + ' min' : ''))}">${d}${s === 'saved' ? '<svg viewBox="0 0 9 16" aria-hidden="true"><path d="M0 0h9v16l-4.5-3.6L0 16z" fill="url(#silk)"/></svg>' : ''}${dot}</span>`);
+    // minutes under the goal show as a violet ink dot that grows with the time read
+    const sz = f1(3 + 5 * Math.min(1, min / RG.goalFor(S.goals, k)));
+    const dot = s !== 'tick' && s !== 'future' && min > 0 ? `<i style="width:${sz}px;height:${sz}px"></i>` : '';
+    cells.push(`<span class="c ${s}"${s === 'tick' || s === 'saved' ? ` style="--r:${tilt(k)}deg"` : ''} title="${esc((STATUS[s] || '') + (min >= 1 ? (STATUS[s] ? ', ' : '') + Math.round(min) + ' min' : ''))}">${d}${s === 'saved' ? MINI_MARK : ''}${dot}</span>`);
   }
-  const atNow = y === now.getFullYear() && m === now.getMonth();
-  return `<section class="panel"><div class="cal-head"><button data-act="cal" data-d="-1" aria-label="Previous month">${IC.prev}</button><h2>${first.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}</h2><button data-act="cal" data-d="1" aria-label="Next month"${atNow ? ' disabled' : ''}>${IC.next}</button></div>
-  <div class="cal">${cells.join('')}</div><div class="legend"><span><i style="background:var(--green)"></i>goal reached</span><span><i style="box-shadow:inset 0 0 0 1.5px var(--scarlet)"></i>saved by a bookmark</span><span><i style="background:var(--cobalt); width:8px; height:8px"></i>read, under the goal</span></div></section>`;
+  const atNow = y === now.getFullYear() && m === now.getMonth(), label = first.toLocaleDateString('sl-SI', { month: 'long', year: 'numeric' });
+  return `<section class="panel"><div class="cal-head"><button data-act="cal" data-d="-1" aria-label="Prejšnji mesec">${IC.prev}</button><h2>${label.charAt(0).toUpperCase() + label.slice(1)}</h2><button data-act="cal" data-d="1" aria-label="Naslednji mesec"${atNow ? ' disabled' : ''}>${IC.next}</button></div>
+  <div class="cal">${cells.join('')}</div><div class="legend"><span><i style="background:var(--good-soft); box-shadow:inset 0 0 0 1.5px var(--good)"></i>cilj dosežen</span><span><i style="background:var(--mark-soft); box-shadow:inset 0 0 0 1.5px var(--mark)"></i>rešeno z zaznamkom</span><span><i style="background:var(--under); width:8px; height:8px; border-radius:50%"></i>branje pod ciljem</span></div></section>`;
 }
-function pinCase(L) {
-  const TIERS = ['Bronze', 'Silver', 'Gold'], SW = ['var(--bronze)', 'var(--silver)', 'var(--gold)'];
-  return `<section class="panel" id="ladder"><div class="head"><h2>Pin case</h2><span class="muted num" style="font-size:.85rem">${L.i + 1} of ${RG.LEVELS.length} pins</span></div>
-  ${TIERS.map((name, tr) => `<div class="tier"><p class="tier-h"><i style="background:${SW[tr]}"></i>${name}<small>${RG.LEVELS[tr * 6][0]}–${RG.LEVELS[tr * 6 + 5][0]} h</small></p><div class="case">${RG.LEVELS.slice(tr * 6, tr * 6 + 6).map((x, j) => {
+// The roster of the kid's 18 stages: name plate, hours and a one-line note; stages not reached yet are silhouettes.
+function roster(L) {
+  const TIERS = ['Bron', 'Srebro', 'Zlato'];
+  return `<section class="panel" id="ladder"><div class="head"><h2>Pot do razsvetljenja</h2><span class="muted num" style="font-size:.85rem">stopnja ${L.i + 1} od ${RG.LEVELS.length}</span></div>
+  ${TIERS.map((name, tr) => `<div class="tier"><p class="tier-h"><i style="background:var(--tier-${tr + 1})"></i>${name}<small>${RG.LEVELS[tr * 6][0]}–${RG.LEVELS[tr * 6 + 5][0]} h</small></p><div class="roster">${RG.LEVELS.slice(tr * 6, tr * 6 + 6).map((x, j) => {
     const i = tr * 6 + j, now = i === L.i, off = i > L.i;
-    return `<div class="cell${now ? ' now' : off ? ' locked' : ''}">${pin(i, 56, off)}<b>${esc(x[1])}</b><small>${now ? 'You are here' : x[0] + ' h'}</small></div>`;
+    return `<div class="cell${now ? ' now' : off ? ' locked' : ''}">${KID(i, 76, off)}<b>${esc(x[1])}</b><small>${now ? 'Tukaj si' : off ? 'pri ' + x[0] + ' h' : x[0] + ' h'}</small>${off ? '' : `<em>${esc(KID_NOTES[i])}</em>`}</div>`;
   }).join('')}</div></div>`).join('')}</section>`;
 }
 function vStats() {
   const tot = totalSec(), st = streakNow(), L = RG.level(tot), t = today(), goal = goalNow(), pr = RG.longestRun(S.sessions);
   const readDays = Object.values(RG.dayTotals(S.sessions)).filter(v => v > 0).length;
-  return `<h1 class="title">Stats</h1>
-  <section class="panel board" aria-label="Records">
-    <div class="rec"><span>Read in total</span><b>${fmtHours(tot)}</b></div>
-    <div class="rec"><span>Best streak</span><b>${st.best} ${st.best === 1 ? 'day' : 'days'}</b></div>
-    <div class="rec"><span>Longest session <span class="chip pr">PR</span></span><b>${pr ? fmtMin(pr) : '–'}</b></div>
-    <div class="rec"><span>Average reading day</span><b>${readDays ? fmtMin(tot / readDays) : '–'}</b></div>
+  return `<h1 class="title">Napredek</h1>
+  <section class="panel board" aria-label="Rekordi">
+    <div class="rec"><span>Skupaj prebrano</span><b>${fmtHours(tot)}</b></div>
+    <div class="rec"><span>Najdaljši niz</span><b>${st.best} ${plural(st.best, DAYS)}</b></div>
+    <div class="rec"><span>Najdaljše branje <span class="chip pr">OR</span></span><b>${pr ? fmtMin(pr) : '–'}</b></div>
+    <div class="rec"><span>Povprečen bralni dan</span><b>${readDays ? fmtMin(tot / readDays) : '–'}</b></div>
   </section>
   ${weekChart(t, goal)}
   ${calendar(st)}
-  ${pinCase(L)}
-  <section class="panel" style="display:grid; gap:12px"><h2 style="font-size:1.15rem">Daily goal</h2><div class="goal"><button data-act="goal" data-d="-5" aria-label="5 minutes less">${IC.minus}</button><div><b class="num">${goal}</b> <span class="muted">min a day</span></div><button data-act="goal" data-d="5" aria-label="5 minutes more">${IC.plus}</button></div><p class="hint">A new goal counts from today. Earlier days keep the goal they had.</p></section>
-  <section class="panel" style="display:grid; gap:12px"><h2 style="font-size:1.15rem">Backup</h2><p class="hint" style="margin-top:0">Everything is kept on this phone only. Save a backup now and then, so a new phone doesn’t mean starting over.</p><div class="btns two"><button class="btn" data-act="export">Save backup</button><button class="btn" data-act="import">Load backup</button></div><div id="imp" style="display:grid; gap:10px"></div></section>`;
+  ${roster(L)}
+  <section class="panel" style="display:grid; gap:12px"><h2 style="font-size:1.15rem">Dnevni cilj</h2><div class="goal"><button data-act="goal" data-d="-5" aria-label="5 minut manj">${IC.minus}</button><div><b class="num">${goal}</b> <span class="muted">min na dan</span></div><button data-act="goal" data-d="5" aria-label="5 minut več">${IC.plus}</button></div><p class="hint">Nov cilj velja od danes. Prejšnji dnevi obdržijo svoj cilj.</p></section>
+  <section class="panel" style="display:grid; gap:12px"><h2 style="font-size:1.15rem">Varnostna kopija</h2><p class="hint" style="margin-top:0">Vse je shranjeno samo na tem telefonu. Občasno shrani varnostno kopijo, da ti z novim telefonom ne bo treba začeti znova.</p><div class="btns two"><button class="btn" data-act="export">Shrani kopijo</button><button class="btn" data-act="import">Naloži kopijo</button></div><div id="imp" style="display:grid; gap:10px"></div></section>`;
 }
 function render() {
   if (!S) return;
@@ -399,20 +353,20 @@ function render() {
 
 // ---------- sheets: add / edit a book, book details, time by hand
 function openSheet(title, body) {
-  $('#sheet').innerHTML = `<div class="row"><h2>${esc(title)}</h2><button class="link" data-act="close">Close</button></div>${body}`;
+  $('#sheet').innerHTML = `<div class="row"><h2>${esc(title)}</h2><button class="link" data-act="close">Zapri</button></div>${body}`;
   $('#scrim').hidden = false;
 }
 function closeSheet() { $('#scrim').hidden = true; $('#sheet').innerHTML = ''; pendingCover = null; }
 const CAM = '<svg width="40" height="40" viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round"><path d="M4 7.5h3l1.5-2h7L17 7.5h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>';
 function sheetBook(id) {
   const b = id ? bookById(id) : null; pendingCover = null;
-  openSheet(b ? 'Edit book' : 'Add a book', `
-    <label class="photo" for="f-photo"><span id="f-prev">${b && covers[b.id] ? `<img src="${covers[b.id]}" alt="">` : CAM}</span><span>${b && b.cover ? 'Change the cover photo' : 'Take a photo of the cover'}</span></label>
+  openSheet(b ? 'Uredi knjigo' : 'Dodaj knjigo', `
+    <label class="photo" for="f-photo"><span id="f-prev">${b && covers[b.id] ? `<img src="${covers[b.id]}" alt="">` : CAM}</span><span>${b && b.cover ? 'Zamenjaj fotografijo platnice' : 'Fotografiraj platnico'}</span></label>
     <input type="file" id="f-photo" accept="image/*" hidden>
-    <label for="f-title">Title<input type="text" id="f-title" value="${esc(b ? b.title : '')}" autocomplete="off" enterkeyhint="next"></label>
-    <label for="f-author">Author (optional)<input type="text" id="f-author" value="${esc(b ? b.author : '')}" autocomplete="off" enterkeyhint="done"></label>
-    <p class="err" id="f-err" hidden>Add a title or a photo of the cover.</p>
-    <button class="btn primary" data-act="savebook" data-id="${b ? b.id : ''}">${b ? 'Save' : 'Add book'}</button>`);
+    <label for="f-title">Naslov<input type="text" id="f-title" value="${esc(b ? b.title : '')}" autocomplete="off" enterkeyhint="next"></label>
+    <label for="f-author">Avtor (neobvezno)<input type="text" id="f-author" value="${esc(b ? b.author : '')}" autocomplete="off" enterkeyhint="done"></label>
+    <p class="err" id="f-err" hidden>Dodaj naslov ali fotografijo platnice.</p>
+    <button class="btn primary" data-act="savebook" data-id="${b ? b.id : ''}">${b ? 'Shrani' : 'Dodaj knjigo'}</button>`);
 }
 function shrink(file) {
   return new Promise((res, rej) => {
@@ -439,26 +393,23 @@ async function saveBook(id) {
     covers[book.id] = URL.createObjectURL(pendingCover);
   }
   if (!b) S.books.push(book);
-  save(); closeSheet(); render(); toast(b ? 'Saved.' : 'Book added. Tap the play button when you start reading.');
+  save(); closeSheet(); render(); toast(b ? 'Shranjeno.' : 'Knjiga je dodana. Ko začneš brati, tapni okrogli gumb ob njej.');
 }
 function sheetDetail(id) {
   const b = bookById(id); if (!b) return;
   const t = RG.bookTotals(S.sessions)[id];
-  const facts = [['Time read', t ? fmtMin(t.sec) : '0 min'], ['Sessions', t ? t.runs.size : 0], ['Started', t ? fmtDay(t.first) : 'Not yet'],
-    b.status === 'finished' ? ['Finished', fmtDay(b.done)] : ['Last read', t ? fmtDay(t.last) : '–']];
+  const facts = [['Čas branja', t ? fmtMin(t.sec) : '0 min'], ['Število branj', t ? t.runs.size : 0], ['Začeta', t ? fmtDay(t.first) : 'Še ne'],
+    b.status === 'finished' ? ['Prebrana', fmtDay(b.done)] : ['Zadnjič brana', t ? fmtDay(t.last) : '–']];
   const acts = {
-    reading: `<button class="btn primary" data-act="start" data-id="${id}">Start reading</button><button class="btn" data-act="manual" data-id="${id}">Add time by hand</button><div class="btns two"><button class="btn" data-act="finishbook" data-id="${id}">Finished it</button><button class="btn" data-act="aside" data-id="${id}">Put aside</button></div>`,
-    finished: `<button class="btn" data-act="reread" data-id="${id}">Read it again</button>`,
-    aside: `<div class="btns two"><button class="btn primary" data-act="reread" data-id="${id}">Back to reading</button><button class="btn" data-act="finishbook" data-id="${id}">Finished it</button></div>`,
+    reading: `<button class="btn primary" data-act="start" data-id="${id}">Začni brati</button><button class="btn" data-act="manual" data-id="${id}">Dodaj čas ročno</button><div class="btns two"><button class="btn" data-act="finishbook" data-id="${id}">Zaključi knjigo</button><button class="btn" data-act="aside" data-id="${id}">Odloži</button></div>`,
+    finished: `<button class="btn" data-act="reread" data-id="${id}">Beri znova</button>`,
+    aside: `<div class="btns two"><button class="btn primary" data-act="reread" data-id="${id}">Nazaj k branju</button><button class="btn" data-act="finishbook" data-id="${id}">Zaključi knjigo</button></div>`,
   }[b.status];
-  openSheet('', `<div class="detail">${cover(b, 84)}<div style="min-width:0; display:grid; gap:6px; justify-items:start"><h2>${esc(bookName(b))}</h2>${b.author ? `<p class="muted">${esc(b.author)}</p>` : ''}<span class="chip st">${{ reading: 'Reading now', finished: 'Finished', aside: 'Put aside' }[b.status]}</span></div></div>
+  openSheet('', `<div class="detail">${cover(b, 84)}<div style="min-width:0; display:grid; gap:6px; justify-items:start"><h2>${esc(bookName(b))}</h2>${b.author ? `<p class="muted">${esc(b.author)}</p>` : ''}<span class="chip st">${{ reading: 'Trenutno berem', finished: 'Prebrana', aside: 'Odložena' }[b.status]}</span></div></div>
     <dl class="facts">${facts.map(f => `<div><dt>${f[0]}</dt><dd>${esc(f[1])}</dd></div>`).join('')}</dl>
-    <div class="btns">${acts}<button class="btn ghost" data-act="edit" data-id="${id}">Edit title, author or cover</button></div>
-    <div class="danger-zone"><button class="del" data-act="delete" data-id="${id}">Delete book</button><p class="err" id="del-note" hidden style="text-align:center">Tap again to delete the book${t ? ' and its ' + fmtMin(t.sec) + ' of reading' : ''}.</p></div>`);
+    <div class="btns">${acts}<button class="btn ghost" data-act="edit" data-id="${id}">Uredi naslov, avtorja ali platnico</button></div>
+    <div class="danger-zone"><button class="del" data-act="delete" data-id="${id}">Izbriši knjigo</button><p class="err" id="del-note" hidden style="text-align:center">Tapni še enkrat, da izbrišeš knjigo${t ? ' in ' + fmtMin(t.sec) + ' branja' : ''}.</p></div>`);
 }
-// a ribbon rosette for a finished book; the cover sits in its middle
-const ROSETTE = `<svg class="rosette" viewBox="0 0 220 252" aria-hidden="true"><path d="M98 150L56 242l19-8 10 17 33-91zM122 150l42 92-19-8-10 17-33-91z" fill="#A92E28"/><path d="M98 150L56 242l19-8M122 150l42 92-19-8" fill="none" stroke="#C9433B" stroke-width="2"/>
-  <path d="${scallop(110, 110, 92, 28, 11)}" fill="#C63A33"/><circle cx="110" cy="110" r="82" fill="#E4483F"/><circle cx="110" cy="110" r="74" fill="none" stroke="url(#pl2)" stroke-width="4"/></svg>`;
 function setStatus(id, status) {
   const b = bookById(id); if (!b) return;
   b.status = status; b.done = status === 'finished' ? today() : null;
@@ -466,22 +417,22 @@ function setStatus(id, status) {
   if (status === 'finished') {
     const y = String(new Date().getFullYear()), n = S.books.filter(x => x.status === 'finished' && (x.done || '').startsWith(y)).length, t = RG.bookTotals(S.sessions)[id];
     vibrate([80, 60, 160]);
-    party(`<div class="hero award">${ROSETTE}<span style="position:relative">${cover(b, 100)}</span>${sparks()}</div><h2>${esc(bookName(b))}</h2><p>Finished. Book ${n} of ${y}.${t ? ' ' + fmtMin(t.sec) + ' of reading.' : ''}</p>`);
+    party(`<div class="hero">${cover(b, 124)}<span class="big-stamp">PREBRANO<small>${esc(fmtDay(b.done))}</small></span>${sparks()}</div><h2>${esc(bookName(b))}</h2><p>To je ${n}. prebrana knjiga v letu ${y}.${t ? ' ' + fmtMin(t.sec) + ' branja.' : ''}</p>`);
   }
 }
 function deleteBook(id, btn) {
-  if (!btn.classList.contains('armed')) { btn.classList.add('armed'); btn.textContent = 'Delete for good'; $('#del-note').hidden = false; return; }
+  if (!btn.classList.contains('armed')) { btn.classList.add('armed'); btn.textContent = 'Izbriši za vedno'; $('#del-note').hidden = false; return; }
   S.books = S.books.filter(b => b.id !== id); S.sessions = S.sessions.filter(s => s.book !== id);
   if (!DEMO) idb.del('cover:' + id).catch(() => {});
   if (covers[id]) { URL.revokeObjectURL(covers[id]); delete covers[id]; }
-  save(); closeSheet(); render(); toast('Book deleted.');
+  save(); closeSheet(); render(); toast('Knjiga je izbrisana.');
 }
 function sheetManual(id) {
-  openSheet('Add time by hand', `<p class="muted">For reading you did without the timer, in ${esc(bookName(bookById(id)))}.</p>
-    <label for="m-min">Minutes<input type="number" id="m-min" inputmode="numeric" min="1" max="600" value="20"></label>
-    <label for="m-day">Day<input type="date" id="m-day" value="${today()}" max="${today()}"></label>
-    <p class="err" id="m-err" hidden>Enter 1 to 600 minutes and a day that isn’t in the future.</p>
-    <button class="btn primary" data-act="savemanual" data-id="${id}">Add</button>`);
+  openSheet('Dodaj čas ročno', `<p class="muted">Za branje brez štoparice. Knjiga: ${esc(bookName(bookById(id)))}.</p>
+    <label for="m-min">Minute<input type="number" id="m-min" inputmode="numeric" min="1" max="600" value="20"></label>
+    <label for="m-day">Dan<input type="date" id="m-day" value="${today()}" max="${today()}"></label>
+    <p class="err" id="m-err" hidden>Vpiši od 1 do 600 minut in dan, ki ni v prihodnosti.</p>
+    <button class="btn primary" data-act="savemanual" data-id="${id}">Dodaj</button>`);
 }
 function saveManual(id) {
   const min = Number($('#m-min').value), day = $('#m-day').value;
@@ -496,14 +447,14 @@ function changeGoal(d) {
   save(); render();
 }
 
-// ---------- backup
+// ---------- backup (the file keeps app: 'reading-gym', so older and newer backups load either way)
 const blobToData = b => new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(b); });
 async function exportData() {
   const cov = {};
   for (const b of S.books) if (b.cover && !DEMO) { try { const blob = await idb.get('cover:' + b.id); if (blob) cov[b.id] = await blobToData(blob); } catch (e) {} }
-  const file = new File([JSON.stringify({ app: 'reading-gym', v: 1, saved: new Date().toISOString(), state: Object.assign({}, S, { run: null }), covers: cov })], 'reading-gym-' + today() + '.json', { type: 'application/json' });
+  const file = new File([JSON.stringify({ app: 'reading-gym', v: 1, saved: new Date().toISOString(), state: Object.assign({}, S, { run: null }), covers: cov })], 'bralni-mentor-' + today() + '.json', { type: 'application/json' });
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
-    try { await navigator.share({ files: [file], title: 'Reading Gym backup' }); return; } catch (e) { if (e.name === 'AbortError') return; }
+    try { await navigator.share({ files: [file], title: 'Varnostna kopija Bralnega mentorja' }); return; } catch (e) { if (e.name === 'AbortError') return; }
   }
   const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = file.name; document.body.append(a); a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
@@ -513,8 +464,9 @@ async function readImport(file) {
     const d = JSON.parse(await file.text());
     if (d.app !== 'reading-gym' || !d.state || !Array.isArray(d.state.books) || !Array.isArray(d.state.sessions)) throw new Error('not a backup');
     pendingImport = d;
-    $('#imp').innerHTML = `<p>Replace everything on this phone with the backup from ${esc(new Date(d.saved).toLocaleString('en-GB'))}? It has ${d.state.books.length} books and ${fmtHours(d.state.sessions.reduce((a, s) => a + s.sec, 0))} of reading.</p><div class="btns two"><button class="btn primary" data-act="import-yes">Replace</button><button class="btn" data-act="import-no">Cancel</button></div>`;
-  } catch (e) { toast('That file isn’t a Reading Gym backup.'); }
+    const nb = d.state.books.length;
+    $('#imp').innerHTML = `<p>Zamenjam vse na tem telefonu s kopijo z dne ${esc(new Date(d.saved).toLocaleString('sl-SI'))}? V njej ${plural(nb, ['je', 'sta', 'so', 'je'])} ${nb} ${plural(nb, BOOKS)} in ${fmtHours(d.state.sessions.reduce((a, s) => a + s.sec, 0))} branja.</p><div class="btns two"><button class="btn primary" data-act="import-yes">Zamenjaj</button><button class="btn" data-act="import-no">Prekliči</button></div>`;
+  } catch (e) { toast('Ta datoteka ni varnostna kopija Bralnega mentorja.'); }
   $('#f-import').value = '';
 }
 async function doImport() {
@@ -524,7 +476,7 @@ async function doImport() {
   for (const [id, url] of Object.entries(d.covers || {})) {
     try { const blob = await (await fetch(url)).blob(); if (!DEMO) await idb.set('cover:' + id, blob); covers[id] = URL.createObjectURL(blob); } catch (e) {}
   }
-  save(); render(); toast('Backup loaded.');
+  save(); render(); toast('Varnostna kopija je naložena.');
 }
 
 // ---------- taps
@@ -546,7 +498,7 @@ document.addEventListener('click', e => {
     case 'finish': finishRun(); break;
     case 'discard':
       if (el.classList.contains('armed')) discardRun();
-      else { el.classList.add('armed'); el.textContent = 'Tap again to throw it away'; setTimeout(() => { el.classList.remove('armed'); el.textContent = 'Throw this session away'; }, 4000); }
+      else { el.classList.add('armed'); el.textContent = 'Tapni še enkrat, da ga zavržeš'; setTimeout(() => { el.classList.remove('armed'); el.textContent = 'Zavrzi to branje'; }, 4000); }
       break;
     case 'still': if (S.run) { S.run.ok = Date.now(); ask = null; save(); paintReader(); } break;
     case 'manual': sheetManual(id); break;
@@ -572,7 +524,7 @@ $('#scrim').addEventListener('click', e => { if (e.target.id === 'scrim') closeS
 document.addEventListener('change', async e => {
   if (e.target.id === 'f-photo' && e.target.files[0]) {
     try { pendingCover = await shrink(e.target.files[0]); $('#f-prev').innerHTML = `<img src="${URL.createObjectURL(pendingCover)}" alt="">`; }
-    catch (err) { toast('That photo couldn’t be read. Try another one.'); }
+    catch (err) { toast('Te fotografije ni bilo mogoče prebrati. Poskusi z drugo.'); }
   }
   if (e.target.id === 'f-import' && e.target.files[0]) readImport(e.target.files[0]);
 });
@@ -581,9 +533,9 @@ window.addEventListener('appinstalled', () => { installEvt = null; render(); });
 
 function demoState() {
   const t = today(), books = [
-    { id: 'd1', title: 'The Old Man and the Sea', author: 'Ernest Hemingway', added: RG.addDays(t, -40), status: 'reading', done: null, cover: false },
-    { id: 'd2', title: 'Meditations', author: 'Marcus Aurelius', added: RG.addDays(t, -20), status: 'reading', done: null, cover: false },
-    { id: 'd3', title: 'Walden', author: 'Henry David Thoreau', added: RG.addDays(t, -60), status: 'finished', done: RG.addDays(t, -12), cover: false },
+    { id: 'd1', title: 'Alamut', author: 'Vladimir Bartol', added: RG.addDays(t, -40), status: 'reading', done: null, cover: false },
+    { id: 'd2', title: 'Na klancu', author: 'Ivan Cankar', added: RG.addDays(t, -20), status: 'reading', done: null, cover: false },
+    { id: 'd3', title: 'Martin Krpan', author: 'Fran Levstik', added: RG.addDays(t, -60), status: 'finished', done: RG.addDays(t, -12), cover: false },
   ];
   const sessions = [];
   for (let i = 45; i >= 0; i--) {
@@ -604,7 +556,7 @@ function demoState() {
   if (DEMO && location.hash === '#demo-add') sheetBook();
   if (DEMO && location.hash === '#demo-level') levelUp(6);
   if (DEMO && location.hash === '#demo-finished') setStatus('d1', 'finished');
-  if (DEMO && location.hash === '#demo-pins') $('#view').innerHTML = `<div class="case">${RG.LEVELS.map((x, i) => `<div class="cell">${pin(i, 72)}<b>${esc(x[1])}</b></div>`).join('')}</div><div class="case">${[0, 6, 12].map(i => `<div class="cell locked">${pin(i, 72, true)}<b>blank</b></div>`).join('')}</div>`;
+  if (DEMO && location.hash === '#demo-levels') $('#view').innerHTML = `<div class="roster" style="grid-template-columns:repeat(3,minmax(0,1fr))">${RG.LEVELS.map((x, i) => `<div class="cell">${KID(i, 104)}<b>${esc(x[1])}</b><small>${x[0]} h</small></div>`).join('')}</div><div class="roster" style="grid-template-columns:repeat(3,minmax(0,1fr))">${[3, 9, 16].map(i => `<div class="cell locked">${KID(i, 104, true)}<b>${esc(RG.LEVELS[i][1])}</b><small>zaklenjeno</small></div>`).join('')}</div>`;
   let day = today();
   setInterval(() => { if (today() !== day) { day = today(); render(); } }, 60e3);
   if (!DEMO && 'serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
