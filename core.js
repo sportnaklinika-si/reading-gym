@@ -1,26 +1,26 @@
 /* Bralni mentor rules: days, the streak with bookmarks, levels. No page code here, so node can test it (test/core.test.js). */
 (function (root) {
-  // THE LEVEL TABLE: [hours of reading, name, one-line note]. Names are placeholders until Jan picks them; change them only here.
+  // THE LEVEL TABLE: [hours of reading, name, one-line note]. The names (the set "Pot mojstra") and notes live only here.
   // kid.js draws the reader growing up across these 18 levels (bronze ring for the first six, silver for the next six, gold for the last six).
   const LEVELS = [
-    [0, 'Raven 1', 'Prva slikanica in prvi muc. Oba grizeta vogale.'],
-    [1, 'Raven 2', 'Muc zaspi po prvi strani. Ti po drugi.'],
-    [3, 'Raven 3', 'Muc je odkril volno. Branje bo počakalo.'],
-    [6, 'Raven 4', 'Ob oknu: ti bereš črke, muc gleda ptice.'],
-    [10, 'Raven 5', 'Muc se je ulegel na knjigo. Pravi, da je zanimiva.'],
-    [15, 'Raven 6', 'Muc ima škatlo, ti imaš novo poglavje.'],
-    [25, 'Raven 7', 'Slušalke so tvoje, muc jih ima raje.'],
-    [40, 'Raven 8', 'Muc preverja, ali knjige padajo. Padajo.'],
-    [60, 'Raven 9', 'Muc spet leži na knjigi. Tokrat na tvoji.'],
-    [85, 'Raven 10', 'Fotelj, kava in muc v naročju. Ne premikaj se.'],
-    [120, 'Raven 11', 'Muc na naslonjalu bere čez ramo.'],
-    [170, 'Raven 12', 'Kava se hladi, ker je zgodba boljša.'],
-    [240, 'Raven 13', 'Muc na oknu šteje ptice, ti strani.'],
-    [330, 'Raven 14', 'Muc je osvojil vrh knjižne omare.'],
-    [450, 'Raven 15', 'Lučka greje knjigo in muca hkrati.'],
-    [600, 'Raven 16', 'Muc ima zdaj svoja očala. In svojo knjigo.'],
-    [800, 'Raven 17', 'Stari prijatelji: ti, muc in prva slikanica.'],
-    [1000, 'Raven 18', 'Tisoč ur kasneje: soba je polna knjig in svetlobe.'],
+    [0, 'Novinec', 'Prva slikanica in prvi muc. Oba grizeta vogale.'],
+    [1, 'Vajenec', 'Muc zaspi po prvi strani. Ti po drugi.'],
+    [3, 'Pridni vajenec', 'Muc se igra z volno, ti z besedami.'],
+    [6, 'Učenec', 'Ob oknu: ti bereš črke, muc gleda ptice.'],
+    [10, 'Marljivi učenec', 'Muc se je ulegel na knjigo. Pravi, da je zanimiva.'],
+    [15, 'Pomočnik', 'Muc ima škatlo, ti imaš novo poglavje.'],
+    [25, 'Popotnik', 'Slušalke so tvoje, muc jih ima raje.'],
+    [40, 'Raziskovalec', 'Muc preverja, ali knjige padajo. Padajo.'],
+    [60, 'Iskalec', 'Muc spet leži na knjigi. Tokrat na tvoji.'],
+    [85, 'Poznavalec', 'Fotelj, kava in muc v naročju. Ne premikaj se.'],
+    [120, 'Pripovedovalec', 'Muc na naslonjalu bere čez ramo.'],
+    [170, 'Mojster', 'Kava se hladi, ker je zgodba boljša.'],
+    [240, 'Učitelj', 'Muc na oknu šteje ptice, ti strani.'],
+    [330, 'Svetovalec', 'Muc je osvojil vrh knjižne omare.'],
+    [450, 'Mentor', 'Lučka greje knjigo in muca hkrati.'],
+    [600, 'Modrec', 'Muc ima zdaj svoja očala. In svojo knjigo.'],
+    [800, 'Veliki modrec', 'Stari prijatelji: ti, muc in prva slikanica.'],
+    [1000, 'Razsvetljeni', 'Tisoč ur kasneje: soba je polna knjig in svetlobe.'],
   ];
   const MARK_EVERY = 7, MARK_MAX = 3;
 

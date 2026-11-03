@@ -1,26 +1,9 @@
-/* Demo only: the colour looks Jan is choosing between, shown on the real app with example data.
-   index.html#demo&theme=A (or B, C, D) loads this file; it overrides the theme block on :root and pulls the fonts from Google Fonts.
-   N (or no theme) is the neutral placeholder in index.html. The app never loads this file; the chosen look will replace the theme block
-   in index.html, with its fonts bundled as woff2 subsets that include č š ž. */
+/* Test tool only: the other colour looks Jan compared, shown on the real app with example data.
+   index.html#demo&theme=B (or C, D) loads this file; it overrides the theme block on :root and pulls the fonts from Google Fonts.
+   Look A (Washi) won and is the theme block in index.html itself, so no theme in the hash means A. The app never loads this file. */
 (function () {
   const pick = (location.hash.match(/&theme=([A-Z])/) || [])[1];
   const THEMES = {
-    A: { // Washi: warm paper, moss green, no boxes; Figtree + Newsreader
-      fonts: 'family=Figtree:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500;600',
-      vars: {
-        bg: '#ECEBE4', surface: '#F6F5F0', surface2: '#D3D2C9', line: '#D3D2C9', fg: '#23241F', muted: '#6F7067', faint: '#6F7067',
-        accent: '#5B7150', 'accent-soft': 'rgba(91,113,80,.12)', 'on-accent': '#FFFFFF',
-        good: '#4E7D5B', 'good-soft': 'rgba(78,125,91,.15)', 'on-good': '#FFFFFF', mark: '#A5523F', 'mark-soft': 'rgba(165,82,63,.12)', under: '#8A8DA4', danger: '#A5523F',
-        'tier-1': '#A88566', 'tier-2': '#9EA3A6', 'tier-3': '#B8975A', lock: '#D3D2C9', 'lock-bg': '#E3E2DA',
-        'bar-bg': 'rgba(236,235,228,.94)', 'toast-bg': '#23241F', 'toast-fg': '#ECEBE4', 'party-bg': '#ECEBE4',
-        font: '"Figtree", -apple-system, "Segoe UI", sans-serif', display: '"Newsreader", Georgia, serif', 'display-w': '600', num: '"Newsreader", Georgia, serif', 'num-w': '600',
-        'r-sm': '8px', 'r-md': '12px', 'r-lg': '18px',
-        'il-wall': '#E3E1D6', 'il-wall-shade': '#D6D3C6', 'il-floor': '#CFC8B5', 'il-floor-shade': '#C0B8A3', 'il-rug': '#C6CBBB', 'il-rug-2': '#AEB5A4',
-        'il-chair': '#7C8B6C', 'il-chair-shade': '#6B7A5D', 'il-cushion': '#C9A46B', 'il-beanbag': '#8D90A8', 'il-curtain': '#A5523F', 'il-window': '#3E4A5E', 'il-window-frame': '#F3F1EA',
-        'il-cloth-1': '#D8B55E', 'il-cloth-2': '#6A86AE', 'il-cloth-3': '#5B7150', 'il-cloth-3d': '#4A5D41', 'il-cloth-4': '#A5523F', 'il-cloth-4d': '#8A4334', 'il-cloth-7': '#7E6A8C',
-        'il-book': '#A5523F', 'il-plant': '#5B7150', 'il-plant-dark': '#46593E', 'il-pot': '#B07A55', 'il-wood': '#A8865F', 'il-wood-dark': '#74563A', 'il-light': 'rgba(240,205,140,.30)',
-      },
-    },
     B: { // Jutro: dawn gradient, soft white panels, violet; Plus Jakarta Sans
       fonts: 'family=Plus+Jakarta+Sans:wght@400;500;600;700;800',
       vars: {

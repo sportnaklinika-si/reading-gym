@@ -1,5 +1,7 @@
 #!/bin/bash
-# Screenshots of the demo screens: test/screens.png (four long pages), screens2.png (timer, sheets, level up), screens3.png (finished book, new pin, first start).
+# Screenshots of the demo screens: test/screens.png (four long pages), screens2.png (timer, sheets, level up), screens3.png (finished book,
+# month, new level, first start), levels.png (all 18 stages), ages.png (seven ages side by side) and icons.png (the app icon at real sizes).
+# The first start needs the app served without data: docker run -d --rm --name rg-serve -p 127.0.0.1:8765:8765 -v "<repo>:/app" -w /app vsk:1 python3 -m http.server 8765
 cd "$(dirname "$0")"
 EDGE="/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe"
 U=$(cygpath -m "$PWD")
@@ -7,4 +9,7 @@ shot() { local T; T=$(cygpath -w "$(mktemp -d)"); "$EDGE" --headless=new --disab
 shot screens.html 1632,1724 screens.png
 shot screens2.html 2034,868 screens2.png
 shot screens3.html 1632,868 screens3.png
+shot pins.html 414,1724 levels.png
+shot '../index.html#demo-ages' 1640,330 ages.png
+shot icons.html 1150,640 icons.png
 ls -la *.png

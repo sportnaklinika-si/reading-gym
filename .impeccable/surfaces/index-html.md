@@ -9,9 +9,9 @@ Scope: the whole phone app, renamed Bralni mentor (Today, Books, Progress, the r
 
 ## Direction contract
 
-THESIS: A calm reading log: every reading day is a dated slot that fills when the goal is reached, and one kid reader grows across 18 levels from letter-catcher to the enlightened mentor. Refuses the habit-tracker default of grey cards, one accent and rings standing in for reward; refuses boxes: sections are separated by space and one hairline.
+THESIS: A calm reading log: every reading day is a dated slot that fills when the goal is reached, and one kid reader grows across 18 levels from Novinec (novice) to Razsvetljeni (the enlightened). Refuses the habit-tracker default of grey cards, one accent and rings standing in for reward; refuses boxes: sections are separated by space and one hairline.
 
-OWN-WORLD: Pending Jan's pick. Placeholder: paper ground (#F6F5F2), white surfaces, ink text, one deep sage accent for what you press, green for goal reached, brick for bookmarks and records, slate blue for minutes under the goal; tier rings bronze, silver, gold. Every colour, font, radius and shadow is a custom property in the single theme block at the top of index.html; the level illustration is coloured only by the --il-* variables.
+OWN-WORLD: Washi, Jan's pick (3 Nov 2026): stone-grey paper ground (#ECEBE4), paler sheets (#F6F5F0), ink text (#23241F), one moss accent (#51664A) for what you press, Figtree for the interface and Newsreader for titles and numbers, green for goal reached, brick for bookmarks and records, slate blue for minutes under the goal; tier rings bronze, silver, gold. Every colour, font, radius and shadow is a custom property in the single theme block at the top of index.html; the level illustration is coloured only by the --il-* variables.
 
 STORY: Jan opens the app, sees the reader at the current age in a room that fills in level by level, today's minutes and the week of dated slots, taps the play button on a book, and later watches the reader grow up from a toddler with a picture book to a wise old reader with a soft glow, the cat ageing alongside.
 

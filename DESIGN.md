@@ -2,59 +2,59 @@
 name: Bralni mentor
 description: A calm Slovene reading timer where one kid reader grows across 18 levels into the enlightened mentor.
 colors:
-  paper: "#F6F5F2"
-  surface: "#FFFFFF"
-  surface-quiet: "#EEECE7"
-  hairline: "#E1DED7"
-  ink: "#1F1E1C"
-  muted: "#67635C"
-  faint: "#726D64"
-  accent: "#2F5B4E"
+  paper: "#ECEBE4"
+  surface: "#F6F5F0"
+  surface-quiet: "#D3D2C9"
+  hairline: "#D3D2C9"
+  ink: "#23241F"
+  muted: "#62635B"
+  faint: "#62635B"
+  accent: "#51664A"
   on-accent: "#FFFFFF"
-  good: "#2F7A52"
-  mark: "#B04A40"
-  under: "#7F8FB0"
-  kid-line: "#2A2927"
-  kid-accent: "#D98A6A"
-  tier-bronze: "#B98A63"
-  tier-silver: "#A6AEB9"
-  tier-gold: "#C7A04A"
-  lock: "#DDD9D1"
+  good: "#3B6747"
+  mark: "#984835"
+  under: "#8A8DA4"
+  kid-wall: "#E3E1D6"
+  kid-book: "#A5523F"
+  tier-bronze: "#A88566"
+  tier-silver: "#9EA3A6"
+  tier-gold: "#B8975A"
+  lock: "#D3D2C9"
   reader-black: "#0C0C0D"
   reader-text: "#D4D0C9"
-  reader-ring: "#5C8576"
+  reader-ring: "#6F8A62"
 typography:
   display:
-    fontFamily: "Rubik Plate (self-hosted Rubik Bold with Slovene glyphs), SF Pro Rounded, ui-rounded, sans-serif"
+    fontFamily: "Newsreader (self-hosted SemiBold subset with Slovene glyphs), Georgia, serif"
     fontSize: "1.9rem"
-    fontWeight: 700
+    fontWeight: 600
     lineHeight: 1.15
     letterSpacing: "-0.01em"
   headline:
-    fontFamily: "Rubik Plate, ui-rounded, sans-serif"
+    fontFamily: "Newsreader, Georgia, serif"
     fontSize: "1.25rem"
-    fontWeight: 700
+    fontWeight: 600
     lineHeight: 1.15
   numeral:
-    fontFamily: "Rubik Plate, ui-rounded, sans-serif"
+    fontFamily: "Newsreader, Georgia, serif"
     fontSize: "2.4rem"
-    fontWeight: 700
+    fontWeight: 600
     lineHeight: 1
     fontFeature: "tnum"
   body:
-    fontFamily: "-apple-system, BlinkMacSystemFont, SF Pro Text, Segoe UI, Roboto, Helvetica Neue, sans-serif"
+    fontFamily: "Figtree (self-hosted variable subset, 400 to 700), -apple-system, Segoe UI, Roboto, sans-serif"
     fontSize: "16px"
     fontWeight: 400
     lineHeight: 1.45
   label:
-    fontFamily: "-apple-system, BlinkMacSystemFont, SF Pro Text, Segoe UI, Roboto, Helvetica Neue, sans-serif"
+    fontFamily: "Figtree, -apple-system, Segoe UI, Roboto, sans-serif"
     fontSize: "0.85rem"
     fontWeight: 600
     lineHeight: 1.3
 rounded:
-  sm: "10px"
-  md: "14px"
-  lg: "20px"
+  sm: "8px"
+  md: "12px"
+  lg: "18px"
   pill: "999px"
 spacing:
   gutter: "20px"
@@ -102,7 +102,7 @@ components:
 
 A reading log that stays out of the way: one column, generous space, sections separated by a single hairline instead of boxes. Every reading day is a dated slot that fills when the goal is reached, the way a library due-date card collects its stamps. The reward is a character in a room: a flat illustration of one reader who grows up across the 18 levels (toddler, schoolkid, teen, adult, middle-aged, old), with a cat that grows old alongside and a room that fills in level by level until it is a library full of light.
 
-**The look is a placeholder.** Jan asked for "simplicity, clean vibe, smart vibe, zen mode" and will choose the final style from examples. Until then the app runs a neutral paper-and-ink theme. The system is built so that choice lands in one place: every colour, font, radius and shadow is a custom property in the single theme block at the top of `index.html`, and the level illustration is coloured only by the `--il-*` variables.
+**The look is Washi (look A), Jan's pick of four on 3 Nov 2026,** after asking for "simplicity, clean vibe, smart vibe, zen mode": stone-grey paper, ink, one moss green, no boxes, Figtree for the interface and Newsreader for titles and numbers. Muted, accent, good and mark are one shade darker than the picked swatches so every text pair passes WCAG AA. The other looks (B Jutro, C Tihota, D Žad) stay as a test tool (`test/themes.js`, `#demo&theme=B`), which the app never loads. A look lands in one place: every colour, font, radius and shadow is a custom property in the single theme block at the top of `index.html`, and the level illustration is coloured only by the `--il-*` variables.
 
 **Key Characteristics:**
 - One theme block (`:root`, between the THEME and "end of theme" comments) owns all visual values; no colour lives anywhere else.
@@ -116,18 +116,18 @@ A reading log that stays out of the way: one column, generous space, sections se
 Restrained: a paper ground, ink text, one accent and three meaning colours.
 
 ### Primary
-- **Accent** (accent, placeholder deep sage): primary buttons, play buttons, the open tab, focus rings, today's open slot, the level progress bar, the current cell in the roster, the goal line in the chart.
+- **Accent** (accent, moss green, 5.3:1 on paper, 6.3:1 under white text): primary buttons, play buttons, the open tab, focus rings, today's open slot, the level progress bar, the current cell in the roster, the goal line in the chart.
 
 ### Secondary
 - **Good** (good): only "goal reached": filled date slots, the tick in the today ring, goal bars, goal days in the calendar.
-- **Mark** (mark): bookmarks, days saved by a bookmark, the OR (personal record) chip, the PREBRANO label on finished books. Delete uses **danger**, which equals mark in the placeholder.
+- **Mark** (mark): bookmarks, days saved by a bookmark, the OR (personal record) chip, the PREBRANO label on finished books. Delete uses **danger**, which equals mark in Washi.
 
 ### Tertiary
 - **Under** (under): minutes read but under the goal, as chart bars and as the calendar dot that grows with time read.
 
 ### Neutral
-- **Paper** (paper): the page ground and inputs. **Surface** (surface): sheets and secondary buttons. **Surface quiet** (surface-quiet): tracks and quiet chips. **Hairline** (hairline): every divider and border.
-- **Ink** (ink) for text, **Muted** (muted, 6:1 on paper) for secondary text, **Faint** (faint, 4.9:1) for empty slots and locked names.
+- **Paper** (paper, stone grey): the page ground and inputs. **Surface** (surface): sheets and secondary buttons. **Surface quiet** (surface-quiet, equal to the hairline in Washi): tracks. **Hairline** (hairline): every divider and border, and the outline of the quiet status chip.
+- **Ink** (ink) for text, **Muted** (muted, 5.1:1 on paper, 4.5:1 on the accent-soft tile) for secondary text, **Faint** (equal to muted in Washi) for empty slots and locked names.
 - **Reader black** (reader-black) with dimmed **reader text** and a dim **reader ring**: the running timer.
 - **Tier bronze / silver / gold**: only the ring around the illustration and the dot beside a tier name.
 - **Illustration group (--il-*)**: the room, the reader, the cat and the light, about sixty variables (wall, floor, skin, hair at three ages, clothes per age, books, wood, plants, cat, lamp light, glow). They are part of the theme block and change with it; `kid.js` turns each into a fill class `f-*` and a stroke class `s-*`.
@@ -139,15 +139,15 @@ Restrained: a paper ground, ink text, one accent and three meaning colours.
 
 ## Typography
 
-**Display Font:** Rubik Bold, self-hosted as `fonts/rubik-bold.woff2` (21 KB subset with č š ž ć đ and Slovene quotes, SIL OFL), in a variable so a theme can swap it.
-**Body Font:** the platform system sans.
+**Display Font:** Newsreader SemiBold, self-hosted as `fonts/newsreader-semibold.woff2` (30 KB: weight 600, optical size 24, Latin and Latin Extended-A, so č š ž Č Š Ž; SIL OFL). Every use of the display face takes `--display-w`, and `font-synthesis-weight:none` keeps the browser from faking a bolder cut.
+**Body Font:** Figtree, self-hosted as `fonts/figtree.woff2` (19 KB variable subset, weights 400 to 700, same characters; SIL OFL). Both are preloaded and precached by the service worker, so the app looks the same offline.
 
-**Character:** a friendly rounded display voice for names and numbers over a native, quiet body.
+**Character:** a bookish serif for names, titles and numbers over a clean, quiet sans.
 
 ### Hierarchy
-- **Display** (700, 1.6–1.9rem): screen titles and the level name on Today.
-- **Headline** (700, 1.1–1.3rem): section and sheet titles ("Trenutno berem", "Ta teden").
-- **Numeral** (700, 2–4.4rem, tabular): streak count, today's minutes, the running clock, records.
+- **Display** (600, 1.6–1.9rem): screen titles and the level name on Today.
+- **Headline** (600, 1.1–1.3rem): section and sheet titles ("Trenutno berem", "Ta teden").
+- **Numeral** (600, 2–4.4rem, tabular): streak count, today's minutes, the running clock, records.
 - **Body** (400, 16px, 1.45): sentences; hints at 0.85rem in muted, max 46ch.
 - **Label** (600, 0.72–0.85rem): meta lines, tabs, chips, slot dates, calendar headers. Sentence case, never tracked capitals (PREBRANO on a finished book is the one stamped label).
 
@@ -164,19 +164,19 @@ Flat. Book covers carry the only resting shadow (`--shadow`); sheets carry an up
 
 ## Shapes
 
-Soft and quiet: 10px slots and inputs, 14px buttons, 20px sheet tops and roster cells, full pills for chips and play buttons. Book covers have a book's corners (3px spine, 5px fore-edge). The kid sits in a circle.
+Soft and quiet: 8px slots and inputs, 12px buttons, 18px sheet tops and roster cells, full pills for chips and play buttons. Book covers have a book's corners (3px spine, 5px fore-edge). The kid sits in a circle.
 
 ## Components
 
 ### Buttons
-- **Primary:** flat accent, white text, 48px, 14px radius; presses to 0.98.
+- **Primary:** flat accent, white text, 48px, 12px radius; presses to 0.98.
 - **Secondary:** surface with a hairline. **Ghost:** no border. **Add a book:** a text button in accent with a plus icon.
 - **Delete:** danger text below a divider; first tap arms it (filled, "Izbriši za vedno").
 - **Play:** 46px accent circle with a drawn triangle on every book being read.
 
 ### Date slots (signature)
 - Seven per week on Today. Empty: the date in faint over a dashed hairline. Today, open: accent outline. Goal reached: good-soft fill with the date in good. Saved by a bookmark: mark-soft fill with a small bookmark and the date in mark. The day the goal is reached the slot presses in once.
-- Theme switches: `--stamp-tilt` (0 straight, 1 a few degrees crooked, stamp-like) and `--stamp-mask` (an ink-grain mask). Both off in the placeholder.
+- Theme switches: `--stamp-tilt` (0 straight, 1 a few degrees crooked, stamp-like) and `--stamp-mask` (an ink-grain mask). Both off in Washi.
 
 ### The level illustration (signature)
 - `kid.js` draws a 160-unit square room for each of the 18 levels. The reader ages every three levels: toddler on the rug (picture book), schoolkid on a cushion, teen on a beanbag (hoodie, headphones), adult in an armchair (sweater), middle-aged (vest, reading glasses, grey temples), old (white hair, cardigan, blanket on the knees). Real proportions: head, ears, eyes that look down at the book, brows, nose, mouth, hair, clothes, sleeves, hands holding the book.
@@ -191,10 +191,14 @@ Soft and quiet: 10px slots and inputs, 14px buttons, 20px sheet tops and roster 
 
 ### Lists and roster
 - Book rows: cover, title, author, time read, play button, bottom hairline; hover underlines the title.
-- Roster cells: no box; the current stage sits on an accent-soft tile with "Tukaj si".
+- Roster cells: no box; the current stage sits on an accent-soft tile with "Tukaj si". The names (the set "Pot mojstra", Novinec to Razsvetljeni) live only in core.js; in a sentence a name follows a colon ("Še 3,2 h do naslednje stopnje: Učenec"), so it stays in the nominative.
+- Status chip in a book sheet: muted text in a hairline outline.
+
+### App icon
+- `icons/icon.svg`: the schoolkid from the level drawings, head and shoulders with the red favourite book, and the young cat close behind, on stone-grey paper with a faint circle. Everything that matters sits inside the maskable safe zone; the body and the cat run on below the edge so they still reach it when the maskable version is scaled down. `icons/make-icons.sh` renders 512, maskable 512, 192 and the 180 apple-touch icon; `test/icons.html` shows them at home-screen sizes.
 
 ### Inputs / Fields
-- Paper ground, hairline border, 10px radius, 48px. Focus: accent border and an accent-soft ring. Errors in danger under the field.
+- Paper ground, hairline border, 8px radius, 48px. Focus: accent border and an accent-soft ring. Errors in danger under the field.
 
 ## Do's and Don'ts
 

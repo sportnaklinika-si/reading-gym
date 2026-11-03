@@ -1,24 +1,24 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-03T16:50:00+01:00",
+  "generatedAt": "2026-11-03T17:45:00+01:00",
   "title": "Design System: Bralni mentor",
   "extensions": {
     "colorMeta": {
-      "paper": { "role": "neutral", "displayName": "Paper (placeholder)", "canonical": "#F6F5F2", "tonalRamp": ["#FFFFFF", "#F6F5F2", "#EEECE7", "#E1DED7"] },
-      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "#1F1E1C", "tonalRamp": ["#1F1E1C", "#67635C", "#726D64"] },
-      "accent": { "role": "primary", "displayName": "Accent (placeholder sage)", "canonical": "#2F5B4E", "tonalRamp": ["#2F5B4E", "rgba(47,91,78,.09)"] },
-      "good": { "role": "secondary", "displayName": "Goal reached", "canonical": "#2F7A52", "tonalRamp": ["#2F7A52", "rgba(47,122,82,.11)"] },
-      "mark": { "role": "secondary", "displayName": "Bookmarks and records", "canonical": "#B04A40", "tonalRamp": ["#B04A40", "rgba(176,74,64,.10)"] },
-      "under": { "role": "tertiary", "displayName": "Minutes under the goal", "canonical": "#7F8FB0" },
-      "tier-bronze": { "role": "accent", "displayName": "Bronze ring", "canonical": "#B98A63" },
-      "tier-silver": { "role": "accent", "displayName": "Silver ring", "canonical": "#A6AEB9" },
-      "tier-gold": { "role": "accent", "displayName": "Gold ring", "canonical": "#C7A04A" },
+      "paper": { "role": "neutral", "displayName": "Paper (stone grey)", "canonical": "#ECEBE4", "tonalRamp": ["#FFFFFF", "#ECEBE4", "#E3E2DA", "#D3D2C9"] },
+      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "#23241F", "tonalRamp": ["#23241F", "#62635B", "#62635B"] },
+      "accent": { "role": "primary", "displayName": "Accent (moss)", "canonical": "#51664A", "tonalRamp": ["#51664A", "rgba(81,102,74,.09)"] },
+      "good": { "role": "secondary", "displayName": "Goal reached", "canonical": "#3B6747", "tonalRamp": ["#3B6747", "rgba(59,103,71,.11)"] },
+      "mark": { "role": "secondary", "displayName": "Bookmarks and records", "canonical": "#984835", "tonalRamp": ["#984835", "rgba(152,72,53,.09)"] },
+      "under": { "role": "tertiary", "displayName": "Minutes under the goal", "canonical": "#8A8DA4" },
+      "tier-bronze": { "role": "accent", "displayName": "Bronze ring", "canonical": "#A88566" },
+      "tier-silver": { "role": "accent", "displayName": "Silver ring", "canonical": "#9EA3A6" },
+      "tier-gold": { "role": "accent", "displayName": "Gold ring", "canonical": "#B8975A" },
       "reader-black": { "role": "neutral", "displayName": "Reading screen", "canonical": "#0C0C0D", "tonalRamp": ["#0C0C0D", "#161618", "#1B1B1D", "#262628"] }
     },
     "typographyMeta": {
       "display": { "displayName": "Display", "purpose": "Screen titles, the level name, section and sheet titles, slot dates." },
       "numeral": { "displayName": "Numeral", "purpose": "Streak count, today's minutes, the running clock, records; tabular figures." },
-      "body": { "displayName": "Body", "purpose": "Sentences and hints in the platform system sans." }
+      "body": { "displayName": "Body", "purpose": "Sentences, hints, labels and tabs in Figtree (bundled)." }
     },
     "shadows": [
       { "name": "shadow", "value": "0 10px 30px -18px rgba(0,0,0,.35)", "purpose": "Book covers and the toast." },
@@ -40,7 +40,7 @@
         "Space and one hairline separate sections; no cards.",
         "The level illustration (reader, cat, room) is coloured only by --il-* variables and its tier ring."
       ],
-      "status": "Placeholder theme; Jan picks the final look from examples (3 Nov 2026)."
+      "status": "Washi (look A), chosen by Jan on 3 Nov 2026; muted, accent, good and mark one shade darker than the swatches for WCAG AA."
     }
   },
   "components": [
@@ -50,7 +50,7 @@
       "refersTo": "button-primary",
       "description": "The one pressed action on a screen or sheet.",
       "html": "<button class=\"ds-btn\">Začni brati</button>",
-      "css": ".ds-btn{min-height:48px;width:100%;border:1px solid #2F5B4E;background:#2F5B4E;color:#fff;border-radius:14px;padding:12px 16px;font:650 16px/1.2 -apple-system,Segoe UI,sans-serif}"
+      "css": ".ds-btn{min-height:48px;width:100%;border:1px solid #51664A;background:#51664A;color:#fff;border-radius:12px;padding:12px 16px;font:650 16px/1.2 Figtree,-apple-system,Segoe UI,sans-serif}"
     },
     {
       "name": "Date Slot Week",
@@ -58,7 +58,7 @@
       "refersTo": "date-slot-goal",
       "description": "Seven days on Today: empty, goal reached, saved by a bookmark, today open.",
       "html": "<div class=\"ds-week\"><span class=\"ds-slot ds-good\">1.11.</span><span class=\"ds-slot ds-saved\">2.11.</span><span class=\"ds-slot ds-blank\">4.11.</span><span class=\"ds-slot ds-open\">3.11.</span></div>",
-      "css": ".ds-week{display:flex;gap:8px;padding:12px;background:#F6F5F2}.ds-slot{display:grid;place-items:center;width:42px;height:32px;border-radius:10px;font:700 11.5px/1 Rubik,sans-serif}.ds-good{color:#2F7A52;background:rgba(47,122,82,.11)}.ds-saved{color:#B04A40;background:rgba(176,74,64,.10)}.ds-blank{color:#726D64;border-bottom:1.5px dashed #E1DED7;border-radius:0}.ds-open{color:#2F5B4E;box-shadow:inset 0 0 0 1.5px #2F5B4E}"
+      "css": ".ds-week{display:flex;gap:8px;padding:12px;background:#ECEBE4}.ds-slot{display:grid;place-items:center;width:42px;height:32px;border-radius:8px;font:600 11.5px/1 Newsreader,Georgia,serif}.ds-good{color:#3B6747;background:rgba(59,103,71,.11)}.ds-saved{color:#984835;background:rgba(152,72,53,.09)}.ds-blank{color:#62635B;border-bottom:1.5px dashed #D3D2C9;border-radius:0}.ds-open{color:#51664A;box-shadow:inset 0 0 0 1.5px #51664A}"
     },
     {
       "name": "Book Row",
@@ -66,7 +66,7 @@
       "refersTo": "play-button",
       "description": "A book being read: cloth cover, title, author, time read, round play button, bottom hairline.",
       "html": "<div class=\"ds-row\"><span class=\"ds-cover\">A</span><div><b>Alamut</b><br><small>Vladimir Bartol · 2 h 34 min branja</small></div><button class=\"ds-play\" aria-label=\"Začni brati\"></button></div>",
-      "css": ".ds-row{display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;padding:14px 0;border-bottom:1px solid #E1DED7;background:#F6F5F2;font:16px -apple-system,Segoe UI,sans-serif;color:#1F1E1C}.ds-row small{color:#67635C}.ds-cover{display:grid;place-items:center;width:48px;height:70px;border-radius:3px 5px 5px 3px;background:#2F5B4E;color:#F1DDB0;font:700 18px Rubik,sans-serif}.ds-play{width:46px;height:46px;border-radius:50%;border:0;background:#2F5B4E}"
+      "css": ".ds-row{display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;padding:14px 0;border-bottom:1px solid #D3D2C9;background:#ECEBE4;font:16px Figtree,-apple-system,Segoe UI,sans-serif;color:#23241F}.ds-row small{color:#62635B}.ds-cover{display:grid;place-items:center;width:48px;height:70px;border-radius:3px 5px 5px 3px;background:#51664A;color:#F1DDB0;font:600 18px Newsreader,Georgia,serif}.ds-play{width:46px;height:46px;border-radius:50%;border:0;background:#51664A}"
     }
   ]
 }

@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-11-03T16:33:37.510Z",
+        "reason": "Jan explicitly chose look A (Washi) with page ground #ECEBE4 on 3 Nov 2026"
+      }
+    ]
+  }
+}

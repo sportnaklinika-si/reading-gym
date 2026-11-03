@@ -25,14 +25,14 @@ Installed to the phone's home screen as a web app (iPhone Safari or Android Chro
 - Books: cover photo or title, author optional, statuses reading / finished / put aside, history with dates.
 - Daily goal 5 to 180 min (default 20); streak with up to 3 bookmarks (1 per 7 goal days).
 - Monthly view in Napredek (Jan, 3 Nov 2026): per month the reading days, total time, goal days, the best streak and a calendar showing days with and without reading, with arrows between months.
-- 18 levels from 0 h to 1000 h in three tiers (bronze, silver, gold rings). Names are placeholders ("Raven N") in one table in core.js until Jan picks them; each level has a one-line note.
+- 18 levels from 0 h to 1000 h in three tiers (bronze, silver, gold rings). Names: the set "Pot mojstra" chosen by Jan (Novinec, Vajenec, Pridni vajenec, Učenec, Marljivi učenec, Pomočnik, Popotnik, Raziskovalec, Iskalec, Poznavalec, Pripovedovalec, Mojster, Učitelj, Svetovalec, Mentor, Modrec, Veliki modrec, Razsvetljeni), in one table in core.js; each level has a one-line note.
 - Data stays on the phone (IndexedDB, keys unchanged since the app was called Reading Gym); backup is a JSON file the user saves.
 - Vanilla HTML, CSS and JS with no build step; works offline; the whole UI is in standard Slovene (direct "ti" form, four plural forms).
 
 ## Brand Commitments
 - Name: Bralni mentor (Jan, 3 Nov 2026). The bookmark rule was chosen by Jan and stays.
-- Levels are one character who grows up (Jan, 3 Nov 2026: "Grows up"; "make it funnier", "a realistic character", "better animation"). The names should be good, not silly; Jan chooses them.
-- Visual direction: "simplicity, clean vibe, smart vibe, zen mode" (Jan, 3 Nov 2026). Jan will choose the final look from examples; until then the app runs a neutral placeholder theme, and every colour, font and radius stays in the single theme block so the chosen theme drops in one place.
+- Levels are one character who grows up (Jan, 3 Nov 2026: "Grows up"; "make it funnier", "a realistic character", "better animation"). The names should be good, not silly; Jan chose "Pot mojstra" (3 Nov 2026).
+- Visual direction: "simplicity, clean vibe, smart vibe, zen mode" (Jan, 3 Nov 2026). Jan chose look A, Washi (3 Nov 2026): stone-grey paper, ink, moss green, no boxes, Figtree and Newsreader. Every colour, font and radius stays in the single theme block. App icon: the young reader and the cat in that look (Jan's request).
 
 ## Evidence on Hand
 No real covers or reading history in the repo. Demo data (`#demo`) is synthetic and labelled on screen ("Vzorčni podatki, nič se ne shrani").

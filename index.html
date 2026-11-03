@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Bralni mentor</title>
-<meta name="description" content="Meri čas branja, ohranjaj niz in rasti od črkolovca do razsvetljenega bralca.">
-<meta name="theme-color" content="#F6F5F2">
+<meta name="description" content="Meri čas branja, ohranjaj niz in rasti od novinca do razsvetljenega bralca.">
+<meta name="theme-color" content="#ECEBE4">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -13,46 +13,50 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="preload" href="fonts/rubik-bold.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/figtree.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/newsreader-semibold.woff2" as="font" type="font/woff2" crossorigin>
 <style>
-@font-face{font-family:"Rubik Plate"; src:url(fonts/rubik-bold.woff2) format("woff2"); font-weight:700; font-style:normal; font-display:swap}
+/* bundled so the app looks the same offline: small subsets with the Slovene letters (see fonts/OFL.txt) */
+@font-face{font-family:"Figtree"; src:url(fonts/figtree.woff2) format("woff2"); font-weight:400 700; font-style:normal; font-display:swap}
+@font-face{font-family:"Newsreader"; src:url(fonts/newsreader-semibold.woff2) format("woff2"); font-weight:600; font-style:normal; font-display:swap}
 /* ===== THEME: every colour, font, radius and shadow of the app lives here. Swap this one block to change the look. =====
-   Placeholder: a calm neutral paper-and-ink theme until Jan picks the final style. */
+   Washi (Jan's pick): stone-grey paper, ink, moss green; open sections without boxes; Figtree for the interface, Newsreader for titles and numbers.
+   Muted, accent, good and mark are a shade darker than the picked swatches so all text meets WCAG AA (4.5:1) on the paper. */
 :root{
   /* ground and text */
-  --bg:#F6F5F2; --surface:#FFFFFF; --surface2:#EEECE7; --line:#E1DED7; --fg:#1F1E1C; --muted:#67635C; --faint:#726D64;
+  --bg:#ECEBE4; --surface:#F6F5F0; --surface2:#D3D2C9; --line:#D3D2C9; --fg:#23241F; --muted:#62635B; --faint:#62635B;
   /* meanings: accent = what you press, good = goal reached, mark = bookmarks and records, under = minutes under the goal */
-  --accent:#2F5B4E; --accent-soft:rgba(47,91,78,.09); --on-accent:#FFFFFF;
-  --good:#2F7A52; --good-soft:rgba(47,122,82,.11); --on-good:#FFFFFF;
-  --mark:#B04A40; --mark-soft:rgba(176,74,64,.10); --under:#7F8FB0; --danger:#B04A40;
+  --accent:#51664A; --accent-soft:rgba(81,102,74,.09); --on-accent:#FFFFFF;
+  --good:#3B6747; --good-soft:rgba(59,103,71,.11); --on-good:#FFFFFF;
+  --mark:#984835; --mark-soft:rgba(152,72,53,.09); --under:#8A8DA4; --danger:#984835;
   /* the level illustration: the reader growing up, the cat and the room (kid.js turns each --il-* into a fill and a stroke class) */
-  --il-wall:#EDE7DD; --il-wall-shade:#E1D8C8; --il-floor:#D8C6AC; --il-floor-shade:#C9B596; --il-rug:#BFCAB9; --il-rug-2:#A6B5A2;
+  --il-wall:#E3E1D6; --il-wall-shade:#D6D3C6; --il-floor:#CFC8B5; --il-floor-shade:#C0B8A3; --il-rug:#C6CBBB; --il-rug-2:#AEB5A4;
   --il-skin:#EDBE96; --il-skin-shade:#D39A72; --il-blush:#E58C7A; --il-lip:#A65A48; --il-ink:#2B2522;
   --il-hair:#5B3A29; --il-hair-grey:#A39C93; --il-hair-white:#ECE8E1;
-  --il-cloth-1:#F2C14E; --il-cloth-2:#5B8BD9; --il-cloth-2b:#F7F4EC; --il-cloth-3:#3E7D6A; --il-cloth-3d:#2F6253; --il-cloth-4:#C7684E; --il-cloth-4d:#A8533C;
-  --il-cloth-5:#DCE3EA; --il-cloth-6:#55607A; --il-cloth-7:#8C6B9E; --il-pants:#3A4A63; --il-pants-kid:#7C9CC9; --il-shoe:#2E2B29;
-  --il-book:#C8483D; --il-book-2:#3F6FB5; --il-book-3:#4E8A5C; --il-book-4:#D9A441; --il-star:#F2C14E; --il-paper:#FBF8F1; --il-paper-line:#D3CABB;
-  --il-wood:#B58B63; --il-wood-dark:#7E5638; --il-chair:#6E8C7A; --il-chair-shade:#5C7867; --il-cushion:#E0A458; --il-beanbag:#7A6FB0; --il-blanket:#E2CDA8; --il-box:#C9A273;
-  --il-window:#3D4E78; --il-window-frame:#F7F4EC; --il-moon:#F6E7B4; --il-curtain:#C7684E; --il-plant:#5E9A62; --il-plant-dark:#3F7A4C; --il-pot:#C97B52;
+  --il-cloth-1:#D8B55E; --il-cloth-2:#6A86AE; --il-cloth-2b:#F7F4EC; --il-cloth-3:#5B7150; --il-cloth-3d:#4A5D41; --il-cloth-4:#A5523F; --il-cloth-4d:#8A4334;
+  --il-cloth-5:#DCE3EA; --il-cloth-6:#55607A; --il-cloth-7:#7E6A8C; --il-pants:#3A4A63; --il-pants-kid:#7C9CC9; --il-shoe:#2E2B29;
+  --il-book:#A5523F; --il-book-2:#3F6FB5; --il-book-3:#4E8A5C; --il-book-4:#D9A441; --il-star:#F2C14E; --il-paper:#FBF8F1; --il-paper-line:#D3CABB;
+  --il-wood:#A8865F; --il-wood-dark:#74563A; --il-chair:#7C8B6C; --il-chair-shade:#6B7A5D; --il-cushion:#C9A46B; --il-beanbag:#8D90A8; --il-blanket:#E2CDA8; --il-box:#C9A273;
+  --il-window:#3E4A5E; --il-window-frame:#F3F1EA; --il-moon:#F6E7B4; --il-curtain:#A5523F; --il-plant:#5B7150; --il-plant-dark:#46593E; --il-pot:#B07A55;
   --il-cat:#E39B4F; --il-cat-shade:#C27A36; --il-cat-light:#F6E4CC; --il-cat-old:#CEC7BB; --il-nose:#D9787A;
-  --il-lamp:#F2C14E; --il-light:rgba(255,214,140,.32); --il-beam:rgba(255,232,180,.36); --il-glow:rgba(255,214,140,.45);
+  --il-lamp:#F2C14E; --il-light:rgba(240,205,140,.30); --il-beam:rgba(255,232,180,.36); --il-glow:rgba(255,214,140,.45);
   /* tier rings around the illustration, and locked levels */
-  --tier-1:#B98A63; --tier-2:#A6AEB9; --tier-3:#C7A04A; --lock:#DDD9D1; --lock-bg:#EEECE7;
+  --tier-1:#A88566; --tier-2:#9EA3A6; --tier-3:#B8975A; --lock:#D3D2C9; --lock-bg:#E3E2DA;
   /* book covers without a photo */
-  --cloth-1:#7A3B3F; --cloth-2:#36486E; --cloth-3:#2F5B4E; --cloth-4:#7C6232; --cloth-5:#5A4A72; --cloth-6:#355F66; --foil:#F1DDB0;
+  --cloth-1:#7A3B3F; --cloth-2:#36486E; --cloth-3:#4A5D41; --cloth-4:#7C6232; --cloth-5:#5A4A72; --cloth-6:#355F66; --foil:#F1DDB0;
   /* layers */
-  --bar-bg:rgba(246,245,242,.92); --scrim:rgba(20,19,17,.38); --toast-bg:#1F1E1C; --toast-fg:#F6F5F2; --party-bg:#F6F5F2;
+  --bar-bg:rgba(236,235,228,.94); --scrim:rgba(20,19,17,.38); --toast-bg:#23241F; --toast-fg:#ECEBE4; --party-bg:#ECEBE4;
   --shadow:0 10px 30px -18px rgba(0,0,0,.35); --shadow-up:0 -20px 50px -24px rgba(0,0,0,.3);
   /* the reading screen stays near black in every theme, so it can stay on beside the book */
-  --reader-bg:#0C0C0D; --reader-fg:#D4D0C9; --reader-muted:#8A867E; --reader-track:#1B1B1D; --reader-ticks:#262628; --reader-ring:#5C8576; --reader-done:#4FA078;
-  --reader-btn:#161618; --reader-btn-line:#2A2A2D; --reader-primary:#1E2B27; --reader-primary-line:#35554B; --reader-primary-fg:#B5D3C7;
+  --reader-bg:#0C0C0D; --reader-fg:#D4D0C9; --reader-muted:#8A867E; --reader-track:#1B1B1D; --reader-ticks:#262628; --reader-ring:#6F8A62; --reader-done:#7FA86C;
+  --reader-btn:#161618; --reader-btn-line:#2A2A2D; --reader-primary:#222A1F; --reader-primary-line:#3E5236; --reader-primary-fg:#C2D3B5;
   /* date stamps: tilt 0 = straight, 1 = a few degrees crooked; mask = ink grain (none = clean) */
   --stamp-tilt:0; --stamp-mask:none;
   /* type and shape */
-  --font:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-  --display:"Rubik Plate", "SF Pro Rounded", ui-rounded, -apple-system, "Segoe UI", sans-serif; --display-w:700;
-  --num:var(--display); --num-w:700;   /* numerals: minutes, streak, records, clock */
-  --r-sm:10px; --r-md:14px; --r-lg:20px; --r-pill:999px;
+  --font:"Figtree", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --display:"Newsreader", Georgia, "Times New Roman", serif; --display-w:600;
+  --num:var(--display); --num-w:600;   /* numerals: minutes, streak, records, clock */
+  --r-sm:8px; --r-md:12px; --r-lg:18px; --r-pill:999px;
   --space:26px;
   /* surfaces: sections are open by default (space and one hairline); a theme can turn them into soft panels */
   --bg-paint:var(--bg); --panel-bg:transparent; --panel-r:0; --panel-pt:var(--space); --panel-px:0; --panel-pb:0; --panel-rule:1px solid var(--line); --sec-pt:var(--space);
@@ -63,7 +67,7 @@
 :root{--top:env(safe-area-inset-top, 0px); --bot:env(safe-area-inset-bottom, 0px)}
 *{box-sizing:border-box}
 html{scrollbar-color:var(--line) transparent}
-html,body{margin:0; background:var(--bg-paint); color:var(--fg); font:16px/1.45 var(--font); -webkit-text-size-adjust:100%; -webkit-tap-highlight-color:transparent}
+html,body{margin:0; background:var(--bg-paint); color:var(--fg); font:16px/1.45 var(--font); font-synthesis-weight:none; -webkit-text-size-adjust:100%; -webkit-tap-highlight-color:transparent}
 body{min-height:100vh; min-height:100dvh; caret-color:var(--accent)}
 /* keeps scrolled content from running into the clock and battery in the status bar */
 body::before{content:""; position:fixed; left:0; right:0; top:0; height:calc(var(--top) + 12px); background:var(--bg); opacity:.94; z-index:15; pointer-events:none}
@@ -139,7 +143,7 @@ main{max-width:560px; margin:0 auto; padding:calc(var(--top) + 28px) max(20px, e
 .chip{display:inline-flex; align-items:center; gap:4px; font-size:.75rem; font-weight:650; border-radius:var(--r-pill); padding:2px 9px; white-space:nowrap}
 .chip.new{background:var(--accent); color:var(--on-accent)}
 .chip.pr{background:var(--mark-soft); color:var(--mark)}
-.chip.st{background:var(--surface2); color:var(--muted)}
+.chip.st{background:transparent; color:var(--muted); box-shadow:inset 0 0 0 1px var(--line)}
 .trackrow{display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:10px}
 .track{height:6px; border-radius:var(--r-pill); background:var(--surface2); overflow:hidden}
 .track i{display:block; height:100%; border-radius:var(--r-pill); background:var(--accent); transition:width .8s var(--ease)}
@@ -184,7 +188,7 @@ main{max-width:560px; margin:0 auto; padding:calc(var(--top) + 28px) max(20px, e
 .book p{font-size:.85rem; color:var(--muted)}
 .book .t{color:var(--fg); opacity:.8}
 .cover{border-radius:3px 5px 5px 3px; object-fit:cover; flex:none; overflow:hidden; display:block; box-shadow:var(--shadow)}
-.cloth{position:relative; display:grid; place-items:center; color:var(--foil); font-family:var(--display); font-weight:700; letter-spacing:.02em}
+.cloth{position:relative; display:grid; place-items:center; color:var(--foil); font-family:var(--display); font-weight:var(--display-w); letter-spacing:.02em}
 .cloth::before{content:""; position:absolute; left:0; top:0; bottom:0; width:12%; background:rgba(0,0,0,.22)}
 .cloth::after{content:""; position:absolute; left:22%; right:10%; top:16%; bottom:16%; border-top:1px solid currentColor; border-bottom:1px solid currentColor; opacity:.45}
 .cloth span{position:relative; padding-left:8%}
@@ -199,7 +203,7 @@ main{max-width:560px; margin:0 auto; padding:calc(var(--top) + 28px) max(20px, e
 .wall{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:20px 14px; margin-top:6px}
 .shelf{position:relative; display:grid; gap:6px; align-content:start; background:none; border:0; padding:0; text-align:left; color:inherit; cursor:pointer}
 .shelf .cover{width:100%; height:auto; aspect-ratio:1/1.45}
-.shelf .done-stamp{position:absolute; top:10px; right:-4px; color:var(--mark); background:var(--surface); padding:4px 6px; font:700 .62rem/1.15 var(--display); text-align:center; letter-spacing:.04em; border-radius:6px; box-shadow:inset 0 0 0 1.5px currentColor; transform:rotate(calc(8deg * var(--stamp-tilt))); -webkit-mask:var(--stamp-mask) center/100% 100%; mask:var(--stamp-mask) center/100% 100%}
+.shelf .done-stamp{position:absolute; top:10px; right:-4px; color:var(--mark); background:var(--surface); padding:4px 6px; font:var(--display-w) .62rem/1.15 var(--display); text-align:center; letter-spacing:.04em; border-radius:6px; box-shadow:inset 0 0 0 1.5px currentColor; transform:rotate(calc(8deg * var(--stamp-tilt))); -webkit-mask:var(--stamp-mask) center/100% 100%; mask:var(--stamp-mask) center/100% 100%}
 .shelf b{font-size:.85rem; font-weight:650; line-height:1.25; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere}
 .shelf small{font-size:.75rem; color:var(--muted); margin-top:-3px}
 .shelf-empty{color:var(--muted); font-size:.9rem; padding:4px 0 0}
@@ -251,7 +255,7 @@ main{max-width:560px; margin:0 auto; padding:calc(var(--top) + 28px) max(20px, e
 .tier-h small{color:var(--muted); font-weight:500; margin-left:auto; font-variant-numeric:tabular-nums}
 .roster{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px}
 .cell{display:grid; justify-items:center; align-content:start; gap:5px; text-align:center; padding:14px 8px; border-radius:var(--r-lg)}
-.cell b{font-family:var(--display); font-size:.9rem; font-weight:700; line-height:1.2; text-wrap:balance}
+.cell b{font-family:var(--display); font-size:.98rem; font-weight:var(--display-w); line-height:1.2; text-wrap:balance}
 .cell small{font-size:.75rem; color:var(--muted); font-variant-numeric:tabular-nums}
 .cell em{font-style:normal; font-size:.78rem; line-height:1.3; color:var(--muted); text-wrap:balance}
 .cell.now{background:var(--accent-soft)}
@@ -293,7 +297,7 @@ main{max-width:560px; margin:0 auto; padding:calc(var(--top) + 28px) max(20px, e
 .reader{position:fixed; inset:0; z-index:40; background:var(--reader-bg); color:var(--reader-muted); display:grid; grid-template-rows:auto 1fr auto; justify-items:center; align-items:center; gap:20px; text-align:center; padding:calc(var(--top) + 22px) 24px calc(var(--bot) + 30px)}
 .rd-top{display:grid; justify-items:center; gap:10px; max-width:100%}
 .rd-top .cover{opacity:.72}
-.rd-book{font:700 1.08rem var(--display); color:var(--reader-fg); overflow-wrap:anywhere}
+.rd-book{font:var(--display-w) 1.12rem var(--display); color:var(--reader-fg); overflow-wrap:anywhere}
 .live{display:inline-flex; align-items:center; gap:7px; font-size:.8rem; font-weight:600; color:var(--reader-muted)}
 .live i{width:8px; height:8px; border-radius:50%; background:var(--reader-ring)}
 .live.off i{background:none; box-shadow:inset 0 0 0 1.5px var(--reader-muted)}
@@ -316,7 +320,7 @@ main{max-width:560px; margin:0 auto; padding:calc(var(--top) + 28px) max(20px, e
 .reader .link{color:var(--reader-muted)}
 .reader .link.armed{color:var(--reader-fg); text-decoration-color:var(--danger)}
 .rd-ask{position:absolute; inset:0; background:var(--reader-bg); display:grid; place-content:center; gap:16px; padding:24px}
-.rd-ask p{font:700 1.7rem var(--display); color:var(--reader-fg)}
+.rd-ask p{font:var(--display-w) 1.7rem var(--display); color:var(--reader-fg)}
 .rd-ask small{color:var(--reader-muted); max-width:30ch; justify-self:center; font-size:.85rem}
 
 /* toast + celebrations */
@@ -330,7 +334,7 @@ main{max-width:560px; margin:0 auto; padding:calc(var(--top) + 28px) max(20px, e
 .hero > *{grid-area:1/1}
 .spark{position:absolute; left:50%; top:50%; width:8px; height:8px; margin:-4px; border-radius:2px; opacity:0; animation:spark 1.2s .25s var(--ease) both}
 .hero .cover{animation:press .9s var(--ease) both}
-.hero .big-stamp{--r:-9deg; align-self:end; margin-bottom:26px; color:var(--mark); background:var(--surface); font:700 1.2rem/1.1 var(--display); letter-spacing:.06em; padding:8px 14px 7px; border-radius:var(--r-sm); box-shadow:inset 0 0 0 2px currentColor, var(--shadow); transform:rotate(calc(var(--r) * var(--stamp-tilt))); -webkit-mask:var(--stamp-mask) center/100% 100%; mask:var(--stamp-mask) center/100% 100%; animation:thunk .75s .55s var(--ease) both}
+.hero .big-stamp{--r:-9deg; align-self:end; margin-bottom:26px; color:var(--mark); background:var(--surface); font:var(--display-w) 1.2rem/1.1 var(--display); letter-spacing:.06em; padding:8px 14px 7px; border-radius:var(--r-sm); box-shadow:inset 0 0 0 2px currentColor, var(--shadow); transform:rotate(calc(var(--r) * var(--stamp-tilt))); -webkit-mask:var(--stamp-mask) center/100% 100%; mask:var(--stamp-mask) center/100% 100%; animation:thunk .75s .55s var(--ease) both}
 .hero .big-stamp small{display:block; font-size:.72rem; letter-spacing:.02em}
 @keyframes up{from{opacity:0; transform:translate(-50%, 14px)}}
 @keyframes fade{from{opacity:0}}

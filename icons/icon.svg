@@ -1,25 +1,50 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <!-- Bralni mentor: the kid reader (glasses, coral scarf, open book) in front of a pale dawn on stamp-pad violet -->
-  <defs>
-    <radialGradient id="bg" cx=".5" cy=".38" r=".8"><stop offset="0" stop-color="#2E2356"/><stop offset="1" stop-color="#16102A"/></radialGradient>
-  </defs>
-  <rect width="100" height="100" fill="url(#bg)"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160">
+  <!-- Bralni mentor: the young reader from the level drawings (kid.js, look A Washi) with the red favourite book, and the cat, on stone-grey paper.
+       #art keeps everything that matters inside the circle a maskable Android icon may cut to; render.html?m scales it into the safe zone (the body and the cat run on below the edge so they still reach it there). -->
+  <rect width="160" height="160" fill="#ECEBE4"/>
   <g id="art">
-    <circle cx="50" cy="47" r="34" fill="#FF9C73" opacity=".22"/>
-    <circle cx="50" cy="45" r="27" fill="#FFD9A8"/>
-    <g transform="translate(50 83) scale(.8) translate(-60 -102)">
-      <ellipse cx="60" cy="86" rx="26" ry="14" fill="#FFF3D6" opacity=".55"/>
-      <path d="M33 92Q60 80 87 92Q90 101 79 102H41Q30 101 33 92Z" fill="#3B3A78"/>
-      <path d="M44 67Q60 60 76 67L80 92Q60 97 40 92Z" fill="#7B5BD6"/>
-      <path d="M46 64Q60 71 74 64V69.5Q60 76 46 69.5Z" fill="#FF7A4E"/><path d="M66 69l8 12-6 1.5z" fill="#FF7A4E"/>
-      <path d="M46 71Q39 81 48 86.5M74 71Q81 81 72 86.5" fill="none" stroke="#7B5BD6" stroke-width="7.5" stroke-linecap="round"/>
-      <circle cx="60" cy="46" r="16" fill="#F3C7A1"/>
-      <path d="M44 46Q43 29 60 29Q77 29 76 46Q71 37.5 60 38Q49 37.5 44 46Z" fill="#5A3A2C"/><path d="M57 30.5Q59 21 67 24Q61 25.5 61.5 31Z" fill="#5A3A2C"/>
-      <ellipse cx="51" cy="52.5" rx="2.8" ry="1.6" fill="#F28B82" opacity=".6"/><ellipse cx="69" cy="52.5" rx="2.8" ry="1.6" fill="#F28B82" opacity=".6"/>
-      <path d="M52.2 47.6q2.5 2 5 0M62.8 47.6q2.5 2 5 0" fill="none" stroke="#2A1B22" stroke-width="1.6" stroke-linecap="round"/>
-      <path d="M57 53.6q3 2.6 6 0" fill="none" stroke="#8A3B35" stroke-width="1.5" stroke-linecap="round"/>
-      <g fill="rgba(255,255,255,.14)" stroke="#2A1B22" stroke-width="1.7"><circle cx="54.6" cy="47.3" r="4.6"/><circle cx="65.4" cy="47.3" r="4.6"/></g><path d="M59 47.3h2" stroke="#2A1B22" stroke-width="1.7"/>
-      <path d="M41 84Q50.5 79.5 60 84Q69.5 79.5 79 84V92.5Q69.5 88 60 92.5Q50.5 88 41 92.5Z" fill="#FFF8E6"/><path d="M60 84Q69.5 79.5 79 84V92.5Q69.5 88 60 92.5Z" fill="#FFE7B8"/><path d="M60 84V92.5" stroke="#C9B48E" stroke-width="1"/>
+    <circle cx="64" cy="76" r="54" fill="#E0DED3"/>
+    <!-- the cat, sitting close behind the reader (kid.js cat, young, sitting) -->
+    <g transform="translate(118 162) scale(1.9)">
+      <path d="M7.6-2.4Q19-3.6 17-15.4" fill="none" stroke="#E39B4F" stroke-width="3.4" stroke-linecap="round"/>
+      <path d="M-9.6 0Q-12.2-13-5.6-19.6H5.6Q12.2-13 9.6 0Z" fill="#E39B4F"/><rect x="-9.6" y="-1" width="19.2" height="14" fill="#E39B4F"/>
+      <ellipse cx="0" cy="-8.6" rx="4.2" ry="6.2" fill="#F6E4CC"/>
+      <g transform="translate(0 -24.6)">
+        <path d="M-7-2.4L-5.8-10.4L-1.6-6ZM7-2.4L5.8-10.4L1.6-6Z" fill="#E39B4F"/>
+        <path d="M-5.6-4L-5-8.2L-3.2-6ZM5.6-4L5-8.2L3.2-6Z" fill="#D9787A" opacity=".55"/>
+        <ellipse cx="0" cy="0" rx="7.4" ry="7" fill="#E39B4F"/>
+        <path d="M-1.8-6.4v2.6M1.8-6.4v2.6M0-6.8v3.2" fill="none" stroke="#C27A36" stroke-width="1" stroke-linecap="round"/>
+        <ellipse cx="0" cy="2.6" rx="3.8" ry="2.7" fill="#F6E4CC"/>
+        <ellipse cx="-2.9" cy="-.6" rx="1.15" ry="1.5" fill="#2B2522"/><ellipse cx="2.9" cy="-.6" rx="1.15" ry="1.5" fill="#2B2522"/>
+        <path d="M-1 1.4h2L0 2.5Z" fill="#D9787A"/>
+      </g>
+    </g>
+    <!-- the reader (kid.js schoolkid), head and shoulders with the open book -->
+    <g transform="translate(64 168) scale(1.9)">
+      <rect x="-3.6" y="-40.6" width="7.2" height="6" fill="#EDBE96"/>
+      <path d="M-10 0C-12-12-15.2-25-13.4-32.6Q-7-36.9 0-36.7Q7-36.9 13.4-32.6C15.2-25 12-12 10 0Z" fill="#5B7150"/><rect x="-10" y="-1" width="20" height="26" fill="#5B7150"/>
+      <path d="M-4.6-36.6L0-30.4L4.6-36.6Q0-34.4-4.6-36.6Z" fill="#FBF8F1"/>
+      <g transform="translate(0 -49.48) scale(1.2)">
+        <ellipse cx="-11.2" cy="1.6" rx="2.2" ry="3.1" fill="#EDBE96"/><ellipse cx="11.2" cy="1.6" rx="2.2" ry="3.1" fill="#EDBE96"/>
+        <ellipse cx="0" cy="0" rx="11.4" ry="12.4" fill="#EDBE96"/>
+        <ellipse cx="-6.9" cy="6" rx="2.1" ry="1.2" fill="#E58C7A" opacity=".5"/><ellipse cx="6.9" cy="6" rx="2.1" ry="1.2" fill="#E58C7A" opacity=".5"/>
+        <ellipse cx="-4.3" cy="2.2" rx="1.5" ry="1.8" fill="#2B2522"/><ellipse cx="4.3" cy="2.2" rx="1.5" ry="1.8" fill="#2B2522"/>
+        <circle cx="-3.8" cy="1.5" r=".5" fill="#FBF8F1"/><circle cx="4.8" cy="1.5" r=".5" fill="#FBF8F1"/>
+        <path d="M-6.6-2.6q2.2-1.4 4.4-.4M6.6-2.6q-2.2-1.4-4.4-.4" fill="none" stroke="#5B3A29" stroke-width="1.1" stroke-linecap="round"/>
+        <path d="M.4 3.4q1.6 2.4-.8 3.4" fill="none" stroke="#D39A72" stroke-width="1.1" stroke-linecap="round"/>
+        <path d="M-2.8 8.2q2.8 1.9 5.6 0" fill="none" stroke="#A65A48" stroke-width="1.2" stroke-linecap="round"/>
+        <path d="M-12 2C-13.6-10-6.4-15.6 0-15.2C7-15.6 13.6-10 12 2C11.4-3 9.6-5.6 7.4-6.4L5.6-3.8L3.6-7L.6-4.4L-2.6-7.4L-5.6-4L-8-6.4C-10-4.8-11.4-1.8-12 2Z" fill="#5B3A29"/>
+      </g>
+      <path d="M12.4-31.6Q18.8-25.4 17.6-19.2Q16.6-15 14.4-13.6M-12.4-31.6Q-18.8-25.4-17.6-19.2Q-16.6-15-14.4-13.6" fill="none" stroke="#5B7150" stroke-width="6.4" stroke-linecap="round"/>
+      <path d="M-16.4-20.4Q-8.2-24.8 0-20.6Q8.2-24.8 16.4-20.4V-7.2Q8.2-11.6 0-7.2Q-8.2-11.6-16.4-7.2Z" fill="#A5523F"/>
+      <path d="M-15-20.4Q-7.6-24 0-20.2Q7.6-24 15-20.4V-8.8Q7.6-12.4 0-8.8Q-7.6-12.4-15-8.8Z" fill="#FBF8F1"/>
+      <path d="M0-20.2V-8.8" stroke="#D3CABB" stroke-width=".8"/>
+      <ellipse cx="-8.6" cy="-16.6" rx="2.1" ry="2.1" fill="#D8B55E"/>
+      <path d="M-13.8-9.6Q-8.6-14-3-10.6V-9.4Q-8.4-11.8-13.8-9.4Z" fill="#5B7150"/>
+      <path d="M2.4-17.2q5.4-2 10.4-.2M2.4-14.2q5.4-2 10.4-.2" fill="none" stroke="#D3CABB" stroke-width=".9" stroke-linecap="round"/>
+      <path d="M1.4-8.6h2.4v7l-1.2-1.4-1.2 1.4Z" fill="#D8B55E"/>
+      <ellipse cx="-14.8" cy="-13.6" rx="3.2" ry="2.8" fill="#EDBE96"/><ellipse cx="14.8" cy="-13.6" rx="3.2" ry="2.8" fill="#EDBE96"/>
+      <ellipse cx="-12.6" cy="-15.8" rx="1.4" ry="2" fill="#EDBE96"/><ellipse cx="12.6" cy="-15.8" rx="1.4" ry="2" fill="#EDBE96"/>
     </g>
   </g>
 </svg>

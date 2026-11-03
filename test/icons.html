@@ -1,0 +1,15 @@
+<!doctype html>
+<!-- The app icon at home-screen sizes on dark and light wallpaper, with the iOS corner mask and the Android circle and squircle masks (test/shoot.sh). -->
+<html><head><meta charset="utf-8"><style>
+body{margin:0;background:#2A2A2A;display:flex;gap:12px;padding:12px;align-items:flex-start;font:600 12px system-ui, sans-serif;color:#888}
+.w{display:grid;gap:14px;padding:18px;border-radius:12px;justify-items:center;align-content:start}
+.w div{display:flex;gap:14px;align-items:end}
+img{display:block}
+.ios{border-radius:22.5%} .circ{border-radius:50%} .sq{border-radius:32%}
+</style></head>
+<body>
+<div class="w" style="background:#FFFFFF"><img src="../icons/icon-512.png" width="256"><span>icon-512 (any)</span><img src="../icons/maskable-512.png" width="256"><span>maskable-512, unmasked</span></div>
+<div class="w" style="background:#3B6E8F"><img class="ios" src="../icons/apple-touch-icon.png" width="180"><div><img class="ios" src="../icons/icon-192.png" width="96"><img class="ios" src="../icons/icon-192.png" width="60"><img class="ios" src="../icons/icon-192.png" width="48"><img class="ios" src="../icons/icon-192.png" width="32"></div><span>iOS, 180 / 96 / 60 / 48 / 32 px</span></div>
+<div class="w" style="background:#1D2733"><img class="circ" src="../icons/maskable-512.png" width="180"><div><img class="circ" src="../icons/maskable-512.png" width="96"><img class="sq" src="../icons/maskable-512.png" width="60"><img class="circ" src="../icons/maskable-512.png" width="48"></div><span>Android masks, 180 / 96 / 60 / 48 px</span></div>
+<div class="w" style="background:#E9E4DA"><img class="sq" src="../icons/maskable-512.png" width="180"><div><img class="ios" src="../icons/icon-192.png" width="60"><img class="circ" src="../icons/maskable-512.png" width="48"><img src="../icons/icon-192.png" width="16"></div><span>light wallpaper, tab 16 px</span></div>
+</body></html>

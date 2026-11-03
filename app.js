@@ -6,7 +6,8 @@ const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 
 const today = () => RG.dayKey(Date.now());
 const CHECK_MS = 45 * 60e3, ANSWER_MS = 3 * 60e3, BEAT_MS = 15e3, MIN_SAVE = 60;
 const HASH = location.hash.split('&')[0], DEMO = HASH.startsWith('#demo');   // example data for screenshots (#demo, #demo-stats, #demo-reader), never saved
-// Demo only: "#demo&theme=A" shows one of the colour looks Jan is choosing from (test/themes.js overrides the theme block); the app itself never loads it.
+// Test only: "#demo&theme=B" (or C, D) shows one of the other colour looks Jan compared (test/themes.js overrides the theme block); the app itself never loads it.
+// "&clean" leaves the example-data badge out of screenshots.
 if (DEMO && /&theme=[A-Z]/.test(location.hash)) { const s = document.createElement('script'); s.src = 'test/themes.js'; document.head.append(s); }
 
 let S = null, view = DEMO && /stats|books/.test(HASH) ? HASH.slice(6) : 'today', calMonth = null, installEvt = null, ask = null, tickT = null, pendingCover = null, pendingImport = null;
@@ -193,7 +194,7 @@ const sparks = () => Array.from({ length: 14 }, (_, k) => {
 function levelUp(i) {
   const L = RG.LEVELS[i], n = RG.LEVELS[i + 1];
   vibrate([80, 60, 80, 60, 160]);
-  party(`<div class="hero morph">${i > 0 ? `<span class="kid-wrap old">${KID(i - 1, 200)}</span>` : ""}<i class="burst"></i><span class="kid-wrap new">${KID(i, 200, false, true)}</span>${sparks()}</div><h2>${esc(L[1])}</h2><p>${esc(RG.LEVELS[i][2])}</p><p>Stopnja ${i + 1} od ${RG.LEVELS.length}, ${L[0]} h branja.${n ? ' Naslednja: ' + esc(n[1]) + ' pri ' + n[0] + '&nbsp;h.' : ' To je vrh poti.'}</p>`);
+  party(`<div class="hero morph">${i > 0 ? `<span class="kid-wrap old">${KID(i - 1, 200)}</span>` : ""}<i class="burst"></i><span class="kid-wrap new">${KID(i, 200, false, true)}</span>${sparks()}</div><h2>${esc(L[1])}</h2><p>${esc(RG.LEVELS[i][2])}</p><p>Stopnja ${i + 1} od ${RG.LEVELS.length}, ${L[0]} h branja.${n ? ' Naslednja:&nbsp;' + esc(n[1]) + ' pri ' + n[0] + '&nbsp;h.' : ' To je vrh poti.'}</p>`);
 }
 
 // ---------- drawing bits
@@ -211,7 +212,7 @@ const IC = {
 const TOAST_IC = {
   tick: '<svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="12" style="fill:var(--good)"/><path d="M8 13.5l3.4 3.4L18.5 9.5" style="fill:none;stroke:var(--on-good);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round"/></svg>',
   mark: '<svg viewBox="0 0 26 26" aria-hidden="true"><path d="M8 1h10v23l-5-4.3L8 24z" style="fill:var(--mark)"/><circle cx="13" cy="6" r="1.6" style="fill:var(--toast-bg)"/></svg>',
-  pr: '<svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="12" style="fill:var(--mark)"/><text x="13" y="17.2" text-anchor="middle" style="font:700 10.5px var(--display);fill:var(--on-accent)">OR</text></svg>',
+  pr: '<svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="12" style="fill:var(--mark)"/><text x="13" y="17.2" text-anchor="middle" style="font:var(--display-w) 10.5px var(--display);fill:var(--on-accent)">OR</text></svg>',
 };
 const initials = b => (bookName(b).match(/[\p{L}\p{N}]+/gu) || ['?']).slice(0, 2).map(w => w[0].toUpperCase()).join('');
 // Without a photo a book gets a cloth binding in one of six colours, picked from its id, with its initials in foil.
@@ -263,11 +264,11 @@ function vToday() {
   const left = L.next != null ? L.next * 3600 - tot : 0, toMark = RG.MARK_EVERY - st.earn;
   const week = Array.from({ length: 7 }, (_, i) => RG.addDays(t, i - 6));
   const fresh = DEMO ? HASH === '#demo-new' : seenLvl() != null && L.i > seenLvl();
-  return `${DEMO ? '<p class="demo">Vzorčni podatki, nič se ne shrani</p>' : ''}${installCard()}
+  return `${DEMO && !location.hash.includes('&clean') ? '<p class="demo">Vzorčni podatki, nič se ne shrani</p>' : ''}${installCard()}
   <button class="lvl" data-act="tab" data-tab="stats" data-to="ladder" aria-label="${esc(L.name)}, stopnja ${L.i + 1} od ${RG.LEVELS.length}. Odpri pot do razsvetljenja.">
     <span class="kid-wrap${fresh ? ' glow-new' : ''}">${KID(L.i, 132, false, true)}</span>
     <div style="min-width:0"><h1>${esc(L.name)}</h1><p class="meta"><span>Stopnja ${L.i + 1} od ${RG.LEVELS.length}</span><span aria-hidden="true">·</span><span>${tot < 3600 ? fmtMin(tot) : fmtHours(tot)} branja</span>${fresh ? '<span class="chip new">Nova stopnja</span>' : ''}</p>
-    ${L.next != null ? `<div class="trackrow"><div class="track"><i style="width:${(L.frac * 100).toFixed(1)}%"></i></div>${KID(L.i + 1, 34, true)}</div><p class="sub">Še <b>${left < 3600 ? Math.ceil(left / 60) + ' min' : fmtHours(left)}</b> do stopnje ${esc(L.nextName)}</p>` : '<p class="sub">Vrh poti. Vse stopnje so tvoje.</p>'}</div></button>
+    ${L.next != null ? `<div class="trackrow"><div class="track"><i style="width:${(L.frac * 100).toFixed(1)}%"></i></div>${KID(L.i + 1, 34, true)}</div><p class="sub">Še <b>${left < 3600 ? Math.ceil(left / 60) + ' min' : fmtHours(left)}</b> do naslednje stopnje: ${esc(L.nextName)}</p>` : '<p class="sub">Vrh poti. Vse stopnje so tvoje.</p>'}</div></button>
   ${S.books.length ? '' : emptyBooks(false)}
   <section class="panel today">${ring(tsec, goal, 96)}<div><h2>${done ? 'Cilj dosežen' : 'Danes'}</h2><p><b>${fmtMin(tsec)}</b> ${done ? 'branja' : 'od ' + goal + ' min'}</p><p>${done ? 'Dnevni cilj: ' + goal + ' min. Se vidiva jutri.' : 'Še ' + Math.ceil((goal * 60 - tsec) / 60) + ' min'}</p></div></section>
   <section class="panel streak"><div class="marks" role="img" aria-label="Zaznamki: ${st.marks} od ${RG.MARK_MAX}">${[0, 1, 2].map(i => mark(i < st.marks)).join('')}</div>
@@ -574,7 +575,7 @@ function demoState() {
     // scroll again once web fonts (demo themes) have settled, with a little room above the month
     const go = () => { document.querySelector('[aria-label="Mesec"]').scrollIntoView(); window.scrollBy(0, -14); }; go(); setTimeout(go, 1500); setTimeout(go, 3500); }
   // levels 1, 4, 7, 10, 13, 16 and 18 side by side, for judging the character as it grows up
-  if (DEMO && HASH === '#demo-ages') { document.body.style.background = 'var(--bg)'; document.body.innerHTML = `<div style="display:flex; gap:18px; padding:20px">${[0, 3, 6, 9, 12, 15, 17].map(i => `<figure style="margin:0; display:grid; gap:6px; justify-items:center; font:600 14px var(--font)">${KID(i, 210)}<b style="font:700 15px var(--display)">${esc(RG.LEVELS[i][1])}</b><span style="color:var(--muted)">${RG.LEVELS[i][0]} h</span></figure>`).join('')}</div>`; }
+  if (DEMO && HASH === '#demo-ages') { document.body.style.background = 'var(--bg)'; document.body.innerHTML = `<div style="display:flex; gap:18px; padding:20px">${[0, 3, 6, 9, 12, 15, 17].map(i => `<figure style="margin:0; display:grid; gap:6px; justify-items:center; font:600 14px var(--font)">${KID(i, 210)}<b style="font:var(--display-w) 15px var(--display)">${esc(RG.LEVELS[i][1])}</b><span style="color:var(--muted)">${RG.LEVELS[i][0]} h</span></figure>`).join('')}</div>`; }
   let day = today();
   setInterval(() => { if (today() !== day) { day = today(); render(); } }, 60e3);
   if (!DEMO && 'serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
