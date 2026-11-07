@@ -163,7 +163,18 @@ const Club = (() => {
   }
 
   // ---------- points
-  const statsOf = m => (m.id === (S.me && S.me.id) ? myStats() : m.stats || {});
+  // a friend's stats come from their phone through the server: keep only well-formed numbers, dates and a short title
+  const isDay = k => typeof k === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(k);
+  const num = (x, max) => { x = Math.floor(Number(x)); return Number.isFinite(x) && x >= 0 ? Math.min(x, max) : 0; };
+  function clean(s) {
+    s = s && typeof s === 'object' && !Array.isArray(s) ? s : {};
+    const days = {};
+    if (s.days && typeof s.days === 'object') for (const k of Object.keys(s.days)) if (isDay(k)) days[k] = num(s.days[k], 86400);
+    return { total: num(s.total, 1e9), level: Math.min(num(s.level, 99), RG.LEVELS.length - 1), streak: num(s.streak, 1e5), best: num(s.best, 1e5),
+      year: num(s.year, 1e4), finished: num(s.finished, 1e5), goal: num(s.goal, 1000), reading: typeof s.reading === 'string' ? s.reading.slice(0, 120) : null,
+      run: num(s.run, 1e14), at: typeof s.at === 'string' ? s.at : null, days, since: isDay(s.since) ? s.since : null };
+  }
+  const statsOf = m => (m.id === (S.me && S.me.id) ? myStats() : clean(m.stats));
   function standings(b, week) {
     const t = today(), R = b.club.rules;
     return (b.members || []).map(m => { const s = statsOf(m); return { m, s, P: RG.weekPoints(R, s.days || {}, s.since || null, t, week) }; });
@@ -205,15 +216,17 @@ const Club = (() => {
   }
   // events are small JSON objects; names go first, verbs in the present tense (no he/she forms needed)
   function eventText(m) {
+    // posted by other phones: every field is checked before it is shown
     let e = {}; try { e = JSON.parse(m.body) || {}; } catch (x) {}
-    const n = '<b>' + esc(m.name || 'Nekdanji član') + '</b>';
+    if (!e || typeof e !== 'object') return null;
+    const n = '<b>' + esc(m.name || 'Nekdanji član') + '</b>', v = Math.floor(Number(e.v)), ok = Number.isFinite(v) && v >= 0;
     switch (e.t) {
       case 'join': return [n + ' se pridruži klubu.', 'join'];
-      case 'book': return [n + ' konča knjigo <i>' + esc(e.v) + '</i>.', 'book'];
-      case 'level': { const L = RG.LEVELS[e.v]; return L ? [n + ' napreduje na stopnjo <i>' + esc(L[1]) + '</i>.', 'level', e.v] : null; }
-      case 'streak': return [n + ' bere že ' + e.v + ' ' + plural(e.v, DAYS) + ' zapored.', 'streak'];
-      case 'win': return [n + ' zmaga v tednu ' + esc(weekLabel(e.w)) + ': ' + e.v + ' ' + plural(e.v, PTS) + '.', 'win'];
-      case 'rules': { const R = RG.RULES[e.v]; return R ? [n + ' izbere nova pravila točk: <i>' + esc(R.name) + '</i>.', 'rules'] : null; }
+      case 'book': return typeof e.v === 'string' ? [n + ' konča knjigo <i>' + esc(e.v.slice(0, 120)) + '</i>.', 'book'] : null;
+      case 'level': return ok && v < RG.LEVELS.length ? [n + ' napreduje na stopnjo <i>' + esc(RG.LEVELS[v][1]) + '</i>.', 'level', v] : null;
+      case 'streak': return ok ? [n + ' bere že ' + v + ' ' + plural(v, DAYS) + ' zapored.', 'streak'] : null;
+      case 'win': return ok && isDay(e.w) ? [n + ' zmaga v tednu ' + esc(weekLabel(e.w)) + ': ' + v + ' ' + plural(v, PTS) + '.', 'win'] : null;
+      case 'rules': return ['A', 'B', 'C'].includes(e.v) ? [n + ' izbere nova pravila točk: <i>' + esc(RG.RULES[e.v].name) + '</i>.', 'rules'] : null;
     }
     return null;
   }
@@ -447,7 +460,7 @@ const Club = (() => {
     openSheet('', `<div class="detail fr-who">${KID(L, 104, false, true)}<div style="min-width:0; display:grid; gap:4px; justify-items:start"><h2>${esc(m.name)}${isMe ? ' <small class="muted">(ti)</small>' : ''}</h2><p class="muted">${esc(RG.LEVELS[L][1])} · stopnja ${L + 1} od ${RG.LEVELS.length}</p>${live(s) ? '<span class="chip live"><i></i>bere prav zdaj</span>' : ''}</div></div>
       ${s.reading ? `<p class="fr-reading">Trenutno bere: <b>${esc(s.reading)}</b></p>` : ''}
       <dl class="facts"><div><dt>Skupaj prebrano</dt><dd>${fmtHours(s.total || 0)}</dd></div><div><dt>Niz</dt><dd>${s.streak || 0} ${plural(s.streak || 0, DAYS)}</dd></div><div><dt>Prebrane knjige letos</dt><dd>${s.year || 0}</dd></div><div><dt>Najdaljši niz</dt><dd>${s.best || 0} ${plural(s.best || 0, DAYS)}</dd></div></dl>
-      <div><div class="head" style="margin-bottom:6px"><h2 style="font-size:1.05rem">Ta teden</h2><b class="num">${P.total} ${plural(Math.abs(P.total), PTS)}</b></div>
+      <div><div class="head" style="margin-bottom:6px"><h2 style="font-size:1.05rem">Ta teden</h2><b class="num">${P.total < 0 ? "−" + Math.abs(P.total) : P.total} ${plural(Math.abs(P.total), PTS)}</b></div>
       <div class="fr-days">${P.days.map(d => `<div class="${d.kind}"><span>${wd(d.k)}</span><i style="--h:${d.min ? Math.max(6, Math.round(Math.min(1, d.min / max) * 100)) : 0}%"></i><b>${d.kind === 'future' || d.kind === 'before' ? '' : signed(d.pts)}</b><small>${d.min ? d.min + ' min' : d.kind === 'miss' ? '0 min' : ''}</small></div>`).join('')}</div>
       ${P.full ? `<p class="hint">Poln teden: ${signed(P.bonus)} točk.</p>` : ''}</div>
       ${seenTxt ? `<p class="hint">${seenTxt}</p>` : ''}
@@ -565,7 +578,7 @@ const Club = (() => {
     if (!me()) return '';
     const c = curClub(), b = c && cache.boards[c.id]; if (!b || !b.members || b.members.length < 2) return '';
     const list = ranked(standings(b), x => x.P.total * 1e4 + x.P.minutes), my = list.find(x => x.m.id === S.me.id); if (!my) return '';
-    return `<button class="fr-line" data-act="tab" data-tab="friends"><span>${esc(c.name)}</span><b>${my.place}. mesto</b><span class="muted">${my.P.total} ${plural(Math.abs(my.P.total), PTS)} ta teden</span>${IC.next}</button>`;
+    return `<button class="fr-line" data-act="tab" data-tab="friends"><span>${esc(c.name)}</span><b>${my.place}. mesto</b><span class="muted">${my.P.total < 0 ? "−" + Math.abs(my.P.total) : my.P.total} ${plural(Math.abs(my.P.total), PTS)} ta teden</span>${IC.next}</button>`;
   }
   // a block in Napredek → Varnostna kopija
   function backupBlock() {
