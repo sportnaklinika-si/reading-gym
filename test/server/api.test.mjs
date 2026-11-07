@@ -1,5 +1,5 @@
 // The friends' server end to end, against the local stack from up.sh (or any URL in BM_URL, with BM_KEY if the server wants one).
-// Run: docker run --rm --network bm-test -v "<v2>:/app" -w /app node:24-alpine node test/server/api.test.mjs
+// Run: docker run --rm --network bm-test -v "<repo>:/app" -w /app node:24-alpine node test/server/api.test.mjs
 import assert from 'node:assert/strict';
 const URL_ = process.env.BM_URL || 'http://bm-api:3000', KEY = process.env.BM_KEY || '';
 const H = { 'Content-Type': 'application/json', ...(KEY ? { apikey: KEY } : {}), ...(KEY.startsWith('eyJ') ? { Authorization: 'Bearer ' + KEY } : {}) };

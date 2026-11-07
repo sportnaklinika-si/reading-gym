@@ -10,7 +10,7 @@ const HASH = location.hash.split('&')[0], DEMO = HASH.startsWith('#demo');   // 
 // "&clean" leaves the example-data badge out of screenshots.
 if (DEMO && /&theme=[A-Z]/.test(location.hash)) { const s = document.createElement('script'); s.src = 'test/themes.js'; document.head.append(s); }
 
-let S = null, view = DEMO && /stats|books/.test(HASH) ? HASH.slice(6) : 'today', calMonth = null, installEvt = null, ask = null, tickT = null, pendingCover = null, pendingImport = null;
+let S = null, view = DEMO && /stats|books/.test(HASH) ? HASH.slice(6) : DEMO && /friends|member|club|welcome|invite|chat/.test(HASH) ? 'friends' : 'today', calMonth = null, installEvt = null, ask = null, tickT = null, pendingCover = null, pendingImport = null;
 let swReg = null, reloadAfterRun = false;   // a new version arrived while the timer ran: switch to it once the reading is saved
 const covers = {};   // book id -> object URL of the cover photo
 
@@ -26,17 +26,75 @@ const idb = (() => {
     const t = db.transaction('kv', mode), q = fn(t.objectStore('kv'));
     t.oncomplete = () => res(q.result); t.onerror = () => rej(t.error);
   }));
-  return { get: k => run('readonly', s => s.get(k)), set: (k, v) => run('readwrite', s => s.put(v, k)), del: k => run('readwrite', s => s.delete(k)) };
+  return { get: k => run('readonly', s => s.get(k)), set: (k, v) => run('readwrite', s => s.put(v, k)), del: k => run('readwrite', s => s.delete(k)), keys: () => run('readonly', s => s.getAllKeys()) };
 })();
 const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
 const fresh = () => ({ v: 1, goals: [{ from: today(), min: 20 }], books: [], sessions: [], run: null });
 
-async function load() {
+// ---------- keeping the data safe while the old and the new version share it
+// Both versions on this phone read and write the same storage ('state'), so all reading counts in both. This version never works
+// on old data: it reads the state again whenever it comes back on screen, and before each save it takes in the books and
+// readings the other version added meanwhile. What this version adds itself is also kept in its own journal ('bm2-own'): if the
+// old version, still open in the background with an older copy, writes over it, the next start of this version puts it back.
+// Once a day a copy of the whole state is kept too ('snap:YYYY-MM-DD', the last 7 days).
+let own = { s: {}, b: {}, gone: {} };   // readings and books saved by this version; ids deleted in this version
+const ownSession = x => { own.s[x.id] = x; };
+const ownBook = b => { b.edited = Date.now(); own.b[b.id] = JSON.parse(JSON.stringify(b)); };
+const ownGone = id => { own.gone[id] = 1; delete own.s[id]; delete own.b[id]; };
+// add what the stored state has and this copy doesn't (unless deleted here)
+function absorb(cur) {
+  if (!cur || !S) return;
+  const sid = new Set(S.sessions.map(x => x.id)), bid = new Set(S.books.map(x => x.id));
+  for (const x of cur.sessions || []) if (!sid.has(x.id) && !own.gone[x.id]) S.sessions.push(x);
+  for (const b of cur.books || []) if (!bid.has(b.id) && !own.gone[b.id]) S.books.push(b);
+}
+// put back what this version saved and an older copy wrote over; returns how many came back
+function restoreOwn() {
+  let n = 0;
+  // deleted here, but the old version wrote them back from its older copy
+  const nb = S.books.length, ns = S.sessions.length;
+  S.books = S.books.filter(b => !own.gone[b.id]); S.sessions = S.sessions.filter(x => !own.gone[x.id]);
+  n += nb - S.books.length + ns - S.sessions.length;
+  const sid = new Set(S.sessions.map(x => x.id));
+  for (const x of Object.values(own.s)) if (!sid.has(x.id) && !own.gone[x.id]) { S.sessions.push(x); n++; }
+  for (const b of Object.values(own.b)) {
+    if (own.gone[b.id]) continue;
+    const i = S.books.findIndex(x => x.id === b.id);
+    if (i < 0) { S.books.push(JSON.parse(JSON.stringify(b))); n++; }
+    else if ((S.books[i].edited || 0) < b.edited) { S.books[i] = JSON.parse(JSON.stringify(b)); n++; }
+  }
+  return n;
+}
+async function readState() {
   let s = null;
-  if (DEMO) s = demoState();
-  else { try { s = await idb.get('state'); } catch (e) { try { s = JSON.parse(lsGet('rg-state')); } catch (e2) {} } }
+  try { s = await idb.get('state'); } catch (e) { try { s = JSON.parse(lsGet('rg-state')); } catch (e2) {} }
+  try { const o = await idb.get('bm2-own'); if (o && o.s) own = o; } catch (e) {}
   S = Object.assign(fresh(), s || {});
+  if (!S.me) { try { const m = await idb.get('bm2-me'); if (m && m.id) S.me = m; } catch (e) {} }   // an older backup was loaded in the old version
+  return restoreOwn();
+}
+// back on screen with no reading running here: take the state as it is stored now (the old version may have changed it)
+async function reread() {
+  if (DEMO || !S || S.run) return;
+  const keepRun = S.run;
+  if (await readState()) save();
+  if (keepRun && !S.run) S.run = keepRun;
+  for (const b of S.books) if (b.cover && !covers[b.id]) loadCover(b.id);
+}
+async function snapshot() {
+  try {
+    const k = 'snap:' + today();
+    if (!(await idb.get(k))) await idb.set(k, JSON.parse(JSON.stringify(Object.assign({}, S, { run: null }))));
+    const old = RG.addDays(today(), -7);
+    for (const key of await idb.keys()) if (typeof key === 'string' && key.startsWith('snap:') && key.slice(5) < old) await idb.del(key);
+  } catch (e) {}
+}
+
+async function load() {
+  let back = 0;
+  if (DEMO) S = Object.assign(fresh(), demoState());
+  else back = await readState();
   // The app was closed while the timer ran (a phone may close it while the screen is locked). Counting with the screen locked,
   // the run goes on from its start time and the return question asks how much counts; otherwise it keeps the time up to
   // the last moment it was seen running.
@@ -46,6 +104,7 @@ async function load() {
     else { if (r.beat > r.at) r.segs.push([r.at, r.beat]); r.at = null; r.why = 'closed'; }
   }
   if (!DEMO) for (const b of S.books) if (b.cover) loadCover(b.id);
+  if (!DEMO) { if (back) save(); snapshot(); }
 }
 async function loadCover(id) {
   try { const blob = await idb.get('cover:' + id); if (blob) { covers[id] = URL.createObjectURL(blob); render(); } } catch (e) {}
@@ -53,8 +112,13 @@ async function loadCover(id) {
 let chain = Promise.resolve();
 function save() {
   if (DEMO) return;
-  const snapS = JSON.parse(JSON.stringify(S));
-  chain = chain.then(() => idb.set('state', snapS)).catch(() => lsSet('rg-state', JSON.stringify(snapS)));
+  chain = chain.then(async () => {
+    let cur = null; try { cur = await idb.get('state'); } catch (e) {}
+    absorb(cur);   // readings and books the old version added meanwhile
+    const snapS = JSON.parse(JSON.stringify(S));
+    try { await idb.set('state', snapS); await idb.set('bm2-own', own); } catch (e) { lsSet('rg-state', JSON.stringify(snapS)); }
+  }).catch(() => {});
+  Club.changed();
 }
 
 // ---------- numbers and words in Slovene
@@ -123,7 +187,7 @@ function finishRun() {
   pauseRun('done');
   const parts = RG.splitByDay(r.segs), total = Object.values(parts).reduce((a, b) => a + b, 0), before = snap();
   S.run = null;
-  if (total >= MIN_SAVE) for (const [day, sec] of Object.entries(parts)) if (sec >= 1) S.sessions.push({ id: uid(), run: r.id, book: r.book, day, sec: Math.round(sec), manual: false });
+  if (total >= MIN_SAVE) for (const [day, sec] of Object.entries(parts)) if (sec >= 1) { const x = { id: uid(), run: r.id, book: r.book, day, sec: Math.round(sec), manual: false }; S.sessions.push(x); ownSession(x); }
   save(); hideReader(); render();
   if (total >= MIN_SAVE) cheer(before, total); else toast('Manj kot minuta branja, zato ni shranjeno.');
 }
@@ -216,11 +280,15 @@ function paintReader() {
     $('#rd-back-n').textContent = back.long ? 'Več kot 4 ure je dolgo, zato predlagam samo čas do ugasnitve: ' + fmtMin(upto) + '.' : 'Do ugasnitve je štoparica kazala ' + fmtMin(upto) + '.';
   }
 }
-document.addEventListener('visibilitychange', () => {
+document.addEventListener('visibilitychange', async () => {
   if (!S) return;
   if (reloadAfterRun && !S.run) return location.reload();
-  if (document.visibilityState === 'hidden') outOfSight();
-  else { render(); if (S.run) { showReader(); backInSight(); } if (swReg) swReg.update().catch(() => {}); }
+  if (document.visibilityState === 'hidden') { outOfSight(); Club.poll(false); }
+  else {
+    await reread();   // the old version may have changed the data meanwhile
+    render(); if (S.run) { showReader(); backInSight(); } if (swReg) swReg.update().catch(() => {});
+    Club.wake();
+  }
 });
 window.addEventListener('pagehide', () => { if (S) outOfSight(); });
 // a touch on the reading screen keeps it lit a few seconds longer; on the black layer the tap only brings the controls back ("unblack")
@@ -238,6 +306,7 @@ function cheer(b, sec) {
   if (!msgs.length) msgs.push(['Shranjeno: ' + fmtMin(sec) + '.']);
   msgs.forEach(m => toast(m[0], m[1]));
   if (a.lvl > b.lvl) levelUp(a.lvl);
+  Club.moments(b, a);   // a new level or a streak milestone goes to the friends' chat
 }
 const toasts = []; let toastOn = false;
 function toast(m, ic) { toasts.push([m, ic]); if (!toastOn) nextToast(); }
@@ -334,6 +403,7 @@ function vToday() {
     <div style="min-width:0"><h1>${esc(L.name)}</h1><p class="meta"><span>Stopnja ${L.i + 1} od ${RG.LEVELS.length}</span><span aria-hidden="true">·</span><span>${tot < 3600 ? fmtMin(tot) : fmtHours(tot)} branja</span>${fresh ? '<span class="chip new">Nova stopnja</span>' : ''}</p>
     ${L.next != null ? `<div class="trackrow"><div class="track"><i style="width:${(L.frac * 100).toFixed(1)}%"></i></div>${KID(L.i + 1, 34, true)}</div><p class="sub">Še <b>${left < 3600 ? Math.ceil(left / 60) + ' min' : fmtHours(left)}</b> do naslednje stopnje: ${esc(L.nextName)}</p>` : '<p class="sub">Vrh poti. Vse stopnje so tvoje.</p>'}</div></button>
   ${S.books.length ? '' : emptyBooks(false)}
+  ${Club.todayLine()}
   <section class="panel today">${ring(tsec, goal, 96)}<div><h2>${done ? 'Cilj dosežen' : 'Danes'}</h2><p><b>${fmtMin(tsec)}</b> ${done ? 'branja' : 'od ' + goal + ' min'}</p><p>${done ? 'Dnevni cilj: ' + goal + ' min. Se vidiva jutri.' : 'Še ' + Math.ceil((goal * 60 - tsec) / 60) + ' min'}</p></div></section>
   <section class="panel streak"><div class="marks" role="img" aria-label="Zaznamki: ${st.marks} od ${RG.MARK_MAX}">${[0, 1, 2].map(i => mark(i < st.marks)).join('')}</div>
     <div class="streak-top"><b>${st.cur}</b><span>${plural(st.cur, DAYS)} zapored</span></div>
@@ -420,13 +490,16 @@ function vStats() {
   ${roster(L)}
   <section class="panel" style="display:grid; gap:12px"><h2 style="font-size:1.15rem">Dnevni cilj</h2><div class="goal"><button data-act="goal" data-d="-5" aria-label="5 minut manj">${IC.minus}</button><div><b class="num">${goal}</b> <span class="muted">min na dan</span></div><button data-act="goal" data-d="5" aria-label="5 minut več">${IC.plus}</button></div><p class="hint">Nov cilj velja od danes. Prejšnji dnevi obdržijo svoj cilj.</p></section>
   <section class="panel" style="display:grid; gap:6px" aria-label="Štoparica"><h2 style="font-size:1.15rem">Štoparica</h2><button class="switch" role="switch" aria-checked="${countOff()}" data-act="countoff"><span>Štej tudi, ko je zaslon zaklenjen</span><i></i></button><p class="hint" style="margin-top:0">${countOff() ? 'Šteje tudi čas, ko si v drugih aplikacijah; če te ni več kot 20 minut, te ob vrnitvi vpraša, koliko naj šteje.' : 'Med branjem zaslon počrni in telefon ostane buden. Če ga zakleneš ali odpreš drugo aplikacijo, se štetje ustavi.'}</p></section>
-  <section class="panel" style="display:grid; gap:12px"><h2 style="font-size:1.15rem">Varnostna kopija</h2><p class="hint" style="margin-top:0">Vse je shranjeno samo na tem telefonu. Občasno shrani varnostno kopijo, da ti z novim telefonom ne bo treba začeti znova.</p><div class="btns two"><button class="btn" data-act="export">Shrani kopijo</button><button class="btn" data-act="import">Naloži kopijo</button></div><div id="imp" style="display:grid; gap:10px"></div></section>`;
+  <section class="panel" style="display:grid; gap:12px"><h2 style="font-size:1.15rem">Varnostna kopija</h2><p class="hint" style="margin-top:0">${Club.me() && (Club.enabled() || DEMO) ? 'Branje je shranjeno na tem telefonu in v oblaku. Kopija v datoteki hrani tudi fotografije platnic.' : 'Vse je shranjeno samo na tem telefonu. Občasno shrani varnostno kopijo, da ti z novim telefonom ne bo treba začeti znova.'}</p><div class="btns two"><button class="btn" data-act="export">Shrani kopijo</button><button class="btn" data-act="import">Naloži kopijo</button></div><div id="imp" style="display:grid; gap:10px"></div>${Club.backupBlock()}</section>
+  ${Club.profileBlock()}
+  <p class="version">Bralni mentor 2, preizkusna različica s prijatelji. Na tem telefonu uporablja iste podatke kot prvi Bralni mentor, zato se branje šteje v obeh.</p>`;
 }
 function render() {
   if (!S) return;
-  $('#view').innerHTML = view === 'books' ? vBooks() : view === 'stats' ? vStats() : vToday();
+  $('#view').innerHTML = view === 'books' ? vBooks() : view === 'stats' ? vStats() : view === 'friends' ? Club.view() : vToday();
   if (!DEMO && (view === 'stats' || seenLvl() == null)) lsSet('rg-seen-lvl', String(RG.level(totalSec()).i));
   document.querySelectorAll('#tabs button').forEach(b => { if (b.dataset.tab === view) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+  Club.after();
 }
 
 // ---------- sheets: add / edit a book, book details, time by hand
@@ -471,6 +544,7 @@ async function saveBook(id) {
     covers[book.id] = URL.createObjectURL(pendingCover);
   }
   if (!b) S.books.push(book);
+  ownBook(book);
   save(); closeSheet(); render(); toast(b ? 'Shranjeno.' : 'Knjiga je dodana. Ko začneš brati, tapni okrogli gumb ob njej.');
 }
 function sheetDetail(id) {
@@ -491,8 +565,10 @@ function sheetDetail(id) {
 function setStatus(id, status) {
   const b = bookById(id); if (!b) return;
   b.status = status; b.done = status === 'finished' ? today() : null;
+  ownBook(b);
   save(); closeSheet(); render();
   if (status === 'finished') {
+    Club.finished(b);
     const y = String(new Date().getFullYear()), n = S.books.filter(x => x.status === 'finished' && (x.done || '').startsWith(y)).length, t = RG.bookTotals(S.sessions)[id];
     vibrate([80, 60, 160]);
     party(`<div class="hero">${cover(b, 124)}<span class="big-stamp">PREBRANO<small>${esc(fmtDay(b.done))}</small></span>${sparks()}</div><h2>${esc(bookName(b))}</h2><p>To je ${n}. prebrana knjiga v letu ${y}.${t ? ' ' + fmtMin(t.sec) + ' branja.' : ''}</p>`);
@@ -500,6 +576,7 @@ function setStatus(id, status) {
 }
 function deleteBook(id, btn) {
   if (!btn.classList.contains('armed')) { btn.classList.add('armed'); btn.textContent = 'Izbriši za vedno'; $('#del-note').hidden = false; return; }
+  ownGone(id); for (const s of S.sessions) if (s.book === id) ownGone(s.id);
   S.books = S.books.filter(b => b.id !== id); S.sessions = S.sessions.filter(s => s.book !== id);
   if (!DEMO) idb.del('cover:' + id).catch(() => {});
   if (covers[id]) { URL.revokeObjectURL(covers[id]); delete covers[id]; }
@@ -516,7 +593,8 @@ function saveManual(id) {
   const min = Number($('#m-min').value), day = $('#m-day').value;
   if (!(min >= 1 && min <= 600) || !/^\d{4}-\d{2}-\d{2}$/.test(day) || day > today()) { $('#m-err').hidden = false; return; }
   const before = snap();
-  S.sessions.push({ id: uid(), run: uid(), book: id, day, sec: Math.round(min * 60), manual: true });
+  const x = { id: uid(), run: uid(), book: id, day, sec: Math.round(min * 60), manual: true };
+  S.sessions.push(x); ownSession(x);
   save(); closeSheet(); render(); cheer(before, min * 60);
 }
 function changeGoal(d) {
@@ -550,7 +628,12 @@ async function readImport(file) {
 async function doImport() {
   const d = pendingImport; if (!d) return;
   pendingImport = null;
+  // "replace everything": what isn't in the backup must not come back from the stored state or the journal
+  const keepMe = S.me, ids = new Set(d.state.books.map(b => b.id).concat(d.state.sessions.map(s => s.id)));
+  for (const x of S.books.concat(S.sessions)) if (!ids.has(x.id)) ownGone(x.id);
+  own.s = {}; own.b = {};
   S = Object.assign(fresh(), d.state, { run: null });
+  if (!S.me && keepMe) S.me = keepMe;   // a backup from the old version has no friends' profile: keep this one
   for (const [id, url] of Object.entries(d.covers || {})) {
     try { const blob = await (await fetch(url)).blob(); if (!DEMO) await idb.set('cover:' + id, blob); covers[id] = URL.createObjectURL(blob); } catch (e) {}
   }
@@ -599,7 +682,9 @@ document.addEventListener('click', e => {
     case 'install': if (installEvt) { installEvt.prompt(); installEvt.userChoice.finally(() => { installEvt = null; render(); }); } break;
     case 'install-hide': lsSet('rg-install-hide', '1'); render(); break;
     case 'party-close': $('#party').hidden = true; break;
+    default: if (el.dataset.act.startsWith('fr-')) Club.act(el);
   }
+  if (el.dataset.act === 'tab') { Club.poll(view === 'friends'); if (view === 'friends') Club.wake(); }
 });
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches('[role="button"][data-act]')) e.target.click(); });
 $('#scrim').addEventListener('click', e => { if (e.target.id === 'scrim') closeSheet(); });
@@ -630,6 +715,8 @@ function demoState() {
 
 (async () => {
   await load();
+  if (Club.init()) view = 'friends';   // opened from an invite link
+  if (DEMO && view === 'friends') Club.demo(HASH);
   if (DEMO && HASH === '#demo-reader') { const now = Date.now(); S.run = { id: 'dr', book: 'd2', segs: [], at: now - 431e3, ok: now, beat: now, why: null }; }
   if (DEMO && HASH === '#demo-paused') { const now = Date.now(); S.run = { id: 'dr', book: 'd2', segs: [[now - 1500e3, now - 300e3]], at: null, ok: now, beat: now, why: 'left' }; }
   // the return question after 1 h 12 min with the screen off (30 min read before), and after 5 h 12 min (a night)
@@ -651,12 +738,21 @@ function demoState() {
   if (DEMO && HASH === '#demo-timer') { view = 'stats'; render(); const go = () => $('[aria-label="Štoparica"]').scrollIntoView({ block: 'center' }); go(); setTimeout(go, 1500); }
   // levels 1, 4, 7, 10, 13, 16 and 18 side by side, for judging the character as it grows up
   if (DEMO && HASH === '#demo-ages') { document.body.style.background = 'var(--bg)'; document.body.innerHTML = `<div style="display:flex; gap:18px; padding:20px">${[0, 3, 6, 9, 12, 15, 17].map(i => `<figure style="margin:0; display:grid; gap:6px; justify-items:center; font:600 14px var(--font)">${KID(i, 210)}<b style="font:var(--display-w) 15px var(--display)">${esc(RG.LEVELS[i][1])}</b><span style="color:var(--muted)">${RG.LEVELS[i][0]} h</span></figure>`).join('')}</div>`; }
+  // the friends' screens: a friend's details, the club settings, the chat
+  if (DEMO && HASH === '#demo-member') Club.sheetMember('demoana00000000a');
+  if (DEMO && HASH === '#demo-club') Club.sheetSettings();
+  if (DEMO && HASH === '#demo-friends-add') Club.sheetAdd();
+  if (DEMO && HASH === '#demo-chat') { const go = () => document.getElementById('fr-chat').scrollIntoView(); go(); setTimeout(go, 1500); }
+  if (DEMO && HASH === '#demo-today-club') { Club.demo('#demo-friends'); view = 'today'; render(); }
+  if (DEMO && HASH === '#demo-backup') { Club.demo('#demo-friends'); view = 'stats'; render(); const go = () => window.scrollTo(0, document.body.scrollHeight); go(); setTimeout(go, 1500); }
+  Club.poll(view === 'friends'); Club.wake();
   let day = today();
   setInterval(() => { if (today() !== day) { day = today(); render(); } }, 60e3);
   // updates: look for a new version every time the app comes back to the screen (a home-screen app often resumes without
   // reloading) and switch to it at once, unless the timer is running; then right after the reading is saved or thrown away
   if (!DEMO && 'serviceWorker' in navigator && location.protocol === 'https:') {
-    const hadCtrl = !!navigator.serviceWorker.controller;
+    // On the first visit the first version's worker (one folder up) may be in charge; this version's own taking over is not an update.
+    const hadCtrl = !!navigator.serviceWorker.controller;   // a new version taking over: reload into it
     navigator.serviceWorker.addEventListener('controllerchange', () => { if (!hadCtrl) return; if (S && S.run) reloadAfterRun = true; else location.reload(); });
     navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(r => { swReg = r; }).catch(() => {});
   }

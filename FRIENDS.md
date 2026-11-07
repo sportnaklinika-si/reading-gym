@@ -1,11 +1,12 @@
-# Bralni mentor 2 (test version with friends)
+# Bralni mentor: friends
 
-Live at https://sportnaklinika-si.github.io/reading-gym/v2/ next to the first version (one folder up, unchanged).
-It is the same app plus a fourth tab, **Prijatelji**: reading friends with a weekly leaderboard, points and comments.
+The fourth tab, **Prijatelji**: reading friends with a weekly leaderboard, points and comments. Built in November 2026 as a
+test version in `v2/` next to the first version; it became the main app once its server was on (Jan's pick), and `v2/` now
+forwards to the main address (old invite links keep their code).
 
 ## Friends
 - **Adding friends** (Jan's pick, 7. 11. 2026: a personal friends list, not clubs): everyone gets a personal code of 8
-  characters (`K7M2 QX9P`). Sending the link (`…/v2/#prijatelj=K7M2QX9P`) or typing the code makes the two of you friends,
+  characters (`K7M2 QX9P`). Sending the link (`…/reading-gym/#prijatelj=K7M2QX9P`) or typing the code makes the two of you friends,
   both ways. A friend can be removed any time; *Nova koda* makes a new code (the old link stops working, friends stay).
   Up to 100 friends; 30 wrong codes a day at most, so codes can't be guessed. No accounts or passwords.
 - **Leaderboard**: me and my friends. *Ta teden* ranks by this week's points (Monday to Sunday), *Skupaj* by all-time
@@ -22,11 +23,11 @@ It is the same app plus a fourth tab, **Prijatelji**: reading friends with a wee
   title being read (can be hidden in the settings). *Izbriši moj profil pri prijateljih* in Napredek deletes it all.
 
 ## Data safety
-- **Same data as the first version.** Both versions are on the same web address, so on the phone they read and write the
-  same storage ('state'). Reading in either counts in both, and switching later needs no move of data.
-- **No version overwrites the other.** This version reads the stored data again whenever it comes back on screen and, before
+- **Same data as the first version.** Both versions were on the same web address, so they always read and wrote the same
+  storage ('state'); the switch moved no data.
+- **No copy overwrites another.** The app reads the stored data again whenever it comes back on screen and, before
   every save, takes in what the other version added. What it adds itself is also kept in its own journal (`bm2-own`), so if
-  the old version (open in the background with an older copy) writes over it, it comes back on the next start. Deleted
+  an older copy of the app (for example one left open in the background) writes over it, it comes back on the next start. Deleted
   books stay deleted. Tested with both versions open side by side.
 - **A copy a day** of the whole state stays on the phone for 7 days (`snap:YYYY-MM-DD` in IndexedDB).
 - **Cloud backup**: once someone joins friends, the reading log (books, sessions, goals; no cover photos) is copied to the
@@ -57,20 +58,18 @@ A Supabase project would work as well (its API address + `/rest/v1` and public k
 - `node test/core.test.js`: the rules, including points for all three sets
 - `test/server/up.sh` starts Postgres 17 + PostgREST in Docker with the schema loaded twice (and Supabase-style open grants,
   to prove the schema closes the tables itself); then
-  `docker run --rm --network bm-test -v "<v2>:/app" -w /app node:24-alpine node test/server/api.test.mjs` runs every function
+  `docker run --rm --network bm-test -v "<repo>:/app" -w /app node:24-alpine node test/server/api.test.mjs` runs every function
   (registering, codes, friends both ways, who sees which posts and comments, bravo, deleting, the guessing limit, the
   posting limit, backup, deleting a profile). The same test runs against the real server with `BM_URL=https://<IP>:8443`.
 - The self-host package was tested the same way: `install.sh` in a fresh folder, the API test against it, a second
   `install.sh` run, the nightly dump and a restore from it; `cert.sh`'s lego call against Pebble (Let's Encrypt's test
   server: an IP certificate, and a second run that skips renewal); nginx 1.24 accepts the site file.
-- The app against the local server: open `http://127.0.0.1:8765/v2/#api=local` (and `http://localhost:8765/v2/` as a second
+- The app against the local server: open `http://127.0.0.1:8765/#api=local` (and `http://localhost:8765/` as a second
   phone; different address, separate storage).
 - Demo screens (no server): `#demo-friends`, `#demo-friends-all`, `#demo-friends-alone`, `#demo-friends-add`, `#demo-chat`,
   `#demo-member`, `#demo-club` (settings), `#demo-welcome`, `#demo-invite`, `#demo-today-club`, `#demo-backup`;
-  `test/shoot.sh` screenshots them into `test/friends-*.png`.
+  `test/shoot-friends.sh` screenshots them into `test/friends-*.png`.
 
-## Making it the main version
-Jan's pick: as soon as the Prijatelji tab works. Copy `v2/*` (without `test/`, `server/`) over the root files, keep the
-root `manifest.webmanifest` name/id or change it, and turn `v2/` into a page that forwards to `../`. The data needs nothing:
-both already use the same storage. Two spots name the folder: the `/v2/sw.js` check in `app.js` (so the worker's first
-take-over is not treated as an update) and `v2/config.js` in `.github/workflows/keep-awake.yml`.
+## v2/
+`v2/index.html` forwards old links (with their `#prijatelj=` code) to the main address, and `v2/sw.js` replaces the old
+worker of `v2/` on phones that had it, clears its cache and removes itself.

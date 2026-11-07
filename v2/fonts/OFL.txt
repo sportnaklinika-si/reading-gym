@@ -1,8 +1,0 @@
-figtree.woff2 is a subset of Figtree (variable, weights 400 to 700), Latin and Latin Extended-A (so č š ž Č Š Ž).
-Copyright 2022 The Figtree Project Authors (https://github.com/erikdkennedy/figtree)
-
-newsreader-semibold.woff2 is a subset of Newsreader at SemiBold 600, optical size 24, Latin and Latin Extended-A.
-Copyright 2020 The Newsreader Project Authors (http://github.com/productiontype/Newsreader)
-
-Both are licensed under the SIL Open Font License, Version 1.1.
-The license is available with a FAQ at: https://openfontlicense.org (formerly http://scripts.sil.org/OFL)

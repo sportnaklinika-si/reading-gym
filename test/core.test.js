@@ -66,4 +66,37 @@ assert.deepStrictEqual(RG.settle([[T(1, 20, 0), T(1, 20, 5)]], null, T(1, 20, 5)
 // record ignores typed-in time, sums the parts of one run
 assert.strictEqual(RG.longestRun([s('2026-03-01', 10, 'r1'), s('2026-03-02', 20, 'r1'), s('2026-03-03', 90, 'r2', true)]), 1800);
 
+// ---------- leaderboard points (week of Monday 2 Nov 2026 to Sunday 8 Nov)
+assert.strictEqual(RG.weekStart('2026-11-07'), '2026-11-02');
+assert.strictEqual(RG.weekStart('2026-11-02'), '2026-11-02');
+assert.strictEqual(RG.weekStart('2026-11-08'), '2026-11-02');
+const wk = (mins, start = '2026-11-02') => Object.fromEntries(mins.map((m, i) => [RG.addDays(start, i), m * 60]).filter(x => x[1] > 0));
+// rules A: 25 min = 10 + 2, 70 min = 10 + 6 (cap), 8 min = short day 0, nothing = -5; Saturday is today: 12 min so far is
+// still open (its minute point counts, no penalty), 40 min would already be a reading day
+let P = RG.weekPoints('A', wk([25, 70, 8, 0, 15, 12, 0]), '2026-10-01', '2026-11-07');
+assert.deepStrictEqual(P.days.map(d => d.kind), ['read', 'read', 'short', 'miss', 'read', 'open', 'future']);
+assert.deepStrictEqual(P.days.map(d => d.pts), [12, 16, 0, -5, 11, 1, 0]);
+assert.deepStrictEqual([P.total, P.read, P.minutes, P.full], [35, 3, 130, false]);
+P = RG.weekPoints('A', wk([0, 0, 0, 0, 0, 40]), '2026-10-01', '2026-11-07');
+assert.deepStrictEqual([P.days[5].kind, P.days[5].pts, P.total], ['read', 14, 14 - 25]);
+// a full week earns the bonus (Sunday evening)
+P = RG.weekPoints('A', wk([20, 20, 20, 20, 20, 20, 20]), '2026-10-01', '2026-11-08');
+assert.deepStrictEqual([P.total, P.read, P.full, P.bonus], [7 * 12 + 20, 7, true, 20]);
+// rules B: only whether you read (10 min is enough)
+P = RG.weekPoints('B', wk([10, 120, 0, 9, 0, 0, 0]), '2026-10-01', '2026-11-08');
+assert.deepStrictEqual(P.days.map(d => d.pts), [10, 10, -10, 0, -10, -10, 0]);   // Sunday is today, still open
+assert.strictEqual(P.total, -10);
+// rules C: one point a minute up to 120 a day
+P = RG.weekPoints('C', wk([30, 200, 0]), '2026-10-01', '2026-11-05');
+assert.deepStrictEqual(P.days.map(d => d.pts).slice(0, 3), [30, 120, -20]);
+// days before the reader started don't count, the start day does; today read counts at once
+P = RG.weekPoints('A', wk([0, 0, 0, 30]), '2026-11-05', '2026-11-05');
+assert.deepStrictEqual(P.days.map(d => d.kind).slice(0, 5), ['before', 'before', 'before', 'read', 'future']);
+assert.strictEqual(P.total, 13);
+// last week, looked at from this week: everything has happened
+P = RG.weekPoints('A', wk([20, 0, 0, 0, 0, 0, 30], '2026-10-26'), '2026-10-01', '2026-11-04', '2026-10-28');
+assert.deepStrictEqual([P.days[0].k, P.days[6].k, P.total], ['2026-10-26', '2026-11-01', 12 - 25 + 13]);
+// unknown rules fall back to A; no data at all is all misses
+assert.strictEqual(RG.weekPoints('Z', {}, null, '2026-11-03').total, -5);
+
 console.log('core ok');

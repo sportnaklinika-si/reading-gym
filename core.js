@@ -104,6 +104,43 @@
     return m;
   }
 
-  const RG = { LEVELS, MARK_EVERY, MARK_MAX, AWAY_ASK, AWAY_LONG, dayKey, keyDate, addDays, goalFor, dayTotals, streak, level, splitByDay, away, settle, bookTotals, longestRun };
+  // ---------- the friends' leaderboard: points per week (Monday to Sunday)
+  // Three sets of rules; the friends' board uses A (Jan's pick, B and C stay for later). For every day of the week up to yesterday, and today once it counts:
+  //   a reading day (at least `min` minutes) earns `day` points, every `per` minutes earn 1 point (at most `cap` a day),
+  //   a day without any reading costs `miss` points, and seven reading days in the week add `week`.
+  //   A short day (some reading, under `min`) earns only its minute points: something is better than nothing.
+  //   Days before the reader started with the app (`since`) don't count, and neither do days still to come.
+  const RULES = {
+    A: { name: 'Uravnoteženo', note: 'Vsak dan šteje in vsaka minuta malo pomaga.', min: 15, day: 10, per: 10, cap: 6, miss: -5, week: 20 },
+    B: { name: 'Vsak dan', note: 'Šteje samo, ali bereš vsak dan. Dolžina ni pomembna.', min: 10, day: 10, per: 0, cap: 0, miss: -10, week: 30 },
+    C: { name: 'Minute', note: 'Vsaka minuta je točka. Prazen dan pa boli.', min: 15, day: 0, per: 1, cap: 120, miss: -20, week: 50 },
+  };
+  const weekStart = k => addDays(k, -((keyDate(k).getDay() + 6) % 7));   // the Monday of day k's week
+  // days = { 'YYYY-MM-DD': seconds }, since = first day with the app, today = the viewer's day, week = any day in the week to score.
+  // Returns the total and one entry per day: { k, min, kind: 'read' | 'short' | 'miss' | 'open' | 'before' | 'future', pts }.
+  function weekPoints(rules, days, since, today, week) {
+    const R = RULES[rules] || RULES.A, mon = weekStart(week || today), out = [];
+    let total = 0, read = 0, minutes = 0;
+    for (let i = 0; i < 7; i++) {
+      const k = addDays(mon, i), min = Math.floor(((days && days[k]) || 0) / 60);
+      let kind, pts = 0;
+      if (k > today) kind = 'future';
+      else if (since && k < since) kind = 'before';
+      else {
+        const tp = R.per ? Math.min(R.cap, Math.floor(min / R.per)) : 0;
+        if (min >= R.min) { kind = 'read'; pts = R.day + tp; read++; }
+        else if (k === today) { kind = 'open'; pts = tp; }   // today isn't over: no penalty yet
+        else if (min > 0) { kind = 'short'; pts = tp; }
+        else { kind = 'miss'; pts = R.miss; }
+      }
+      if (kind !== 'future' && kind !== 'before') minutes += min;
+      total += pts; out.push({ k, min, kind, pts });
+    }
+    const full = read === 7;
+    if (full) total += R.week;
+    return { total, days: out, read, minutes, full, bonus: full ? R.week : 0 };
+  }
+
+  const RG = { LEVELS, MARK_EVERY, MARK_MAX, AWAY_ASK, AWAY_LONG, RULES, dayKey, keyDate, addDays, goalFor, dayTotals, streak, level, splitByDay, away, settle, bookTotals, longestRun, weekStart, weekPoints };
   if (typeof module !== 'undefined' && module.exports) module.exports = RG; else root.RG = RG;
 })(this);

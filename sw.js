@@ -1,7 +1,8 @@
-// Keeps the app working without internet. Network first and past the browser's own cache (GitHub Pages lets browsers keep
+// Keeps Bralni mentor working without internet. Network first and past the browser's own cache (GitHub Pages lets browsers keep
 // files for 10 minutes), so a new version arrives the moment the app is opened with a connection.
-const CACHE = 'bralni-mentor-v6';
-const FILES = ['./', 'index.html', 'app.js', 'core.js', 'kid.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'fonts/figtree.woff2', 'fonts/newsreader-semibold.woff2'];
+// It replaces every older cache of the app, also the test version's ('bm2-…') from when the friends' version lived in v2/.
+const CACHE = 'bralni-mentor-v7';
+const FILES = ['./', 'index.html', 'app.js', 'core.js', 'kid.js', 'club.js', 'config.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'fonts/figtree.woff2', 'fonts/newsreader-semibold.woff2'];
 
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES.map(f => new Request(f, { cache: 'reload' }))))); self.skipWaiting(); });
 self.addEventListener('activate', e => {
@@ -14,5 +15,5 @@ self.addEventListener('fetch', e => {
   e.respondWith(fetch(req).then(r => {
     if (r.ok) { const copy = r.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); }
     return r;
-  }).catch(() => caches.match(e.request, { ignoreSearch: true }).then(r => r || caches.match('index.html'))));
+  }).catch(() => caches.match(e.request, { ignoreSearch: true, cacheName: CACHE }).then(r => r || caches.match('index.html', { cacheName: CACHE }))));
 });

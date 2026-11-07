@@ -1,7 +1,8 @@
 {
+  "id": "./",
   "name": "Bralni mentor",
   "short_name": "Bralni mentor",
-  "description": "Meri čas branja, ohranjaj niz in rasti od novinca do razsvetljenega bralca.",
+  "description": "Meri čas branja, ohranjaj niz, rasti od novinca do razsvetljenega bralca in beri s prijatelji.",
   "lang": "sl",
   "start_url": "./",
   "scope": "./",
