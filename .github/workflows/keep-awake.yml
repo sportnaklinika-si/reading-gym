@@ -1,6 +1,6 @@
-# Bralni mentor 2: a free Supabase project goes to sleep after a week without visitors. One small call a day keeps the
-# friends' server awake. The address and the public key come from v2/config.js; while it is empty, this does nothing.
-name: Keep the friends' server awake
+# Bralni mentor 2: a daily check that the friends' server answers over HTTPS (it also notices an expired certificate).
+# If it fails, GitHub e-mails the repository owner. The address comes from v2/config.js; while it is empty, this does nothing.
+name: Check the friends' server
 on:
   schedule:
     - cron: '17 5 * * *'
@@ -17,4 +17,4 @@ jobs:
           URL=$(sed -n "s/.*url: '\([^']*\)'.*/\1/p" v2/config.js)
           KEY=$(sed -n "s/.*key: '\([^']*\)'.*/\1/p" v2/config.js)
           if [ -z "$URL" ]; then echo "No server in v2/config.js yet."; exit 0; fi
-          curl -fsS -X POST "$URL/rpc/bm_ping" -H "apikey: $KEY" -H "Content-Type: application/json" -d '{}'
+          curl -fsS --max-time 20 -X POST "$URL/rpc/bm_ping" ${KEY:+-H "apikey: $KEY"} -H "Content-Type: application/json" -d '{}'

@@ -1,46 +1,43 @@
--- Bralni mentor 2: the friends' server (Supabase, Postgres). Paste the whole file into the Supabase SQL editor and run it;
--- running it again is safe (it only adds what is missing and replaces the functions).
+-- Bralni mentor 2: the friends' server (Postgres 17 + PostgREST, see server/self-host/). Run the whole file; running it
+-- again is safe (it only adds what is missing and replaces the functions).
 --
 -- How it works: the app has no logins. Each phone makes up its own id and a long secret key; the server keeps only a hash
--- of the key. The tables are closed to the outside (row level security on, no policies), so the public API key can only
+-- of the key. The tables are closed to the outside (row level security on, no policies, no grants), so the API can only
 -- call the bm_* functions below, and each of them checks the id and key first.
--- A bralni klub (reading club) is a group of friends who share a leaderboard and a chat; a 6-letter code invites others.
+-- Friends: everyone has a personal code. Entering a friend's code makes the two of you friends (both ways). Each person
+-- sees a board of themselves and their friends, and a feed of their own and their friends' posts and reading moments,
+-- with comments and bravos. A comment belongs to the thread of the post it answers: whoever can see the post sees it.
 
 create table if not exists bm_members (
   id text primary key,                         -- made up by the phone: 16 letters and digits
   key_hash bytea not null,                     -- sha256 of the phone's secret key
   name text not null check (char_length(name) between 1 and 24),
+  code text unique,                            -- personal friend code: 8 characters, no look-alikes (no I, O, 0, 1)
   stats jsonb not null default '{}'::jsonb,    -- what friends see: level, total time, minutes per day of the last weeks
   backup jsonb,                                -- the phone's whole reading log (books, sessions, goals), for a new phone
   backup_at timestamptz,
+  fails int not null default 0,                -- wrong friend codes tried in the last day (a limit against guessing codes)
+  fails_at timestamptz,
   created_at timestamptz not null default now(),
   seen_at timestamptz not null default now()
 );
-create table if not exists bm_clubs (
-  id bigint generated always as identity primary key,
-  code text not null unique,                   -- 6 characters, no look-alikes (no I, O, 0, 1)
-  name text not null check (char_length(name) between 1 and 40),
-  rules text not null default 'A' check (rules in ('A', 'B', 'C')),   -- the points rules, see core.js RULES
-  owner text references bm_members(id) on delete set null,
-  created_at timestamptz not null default now()
+create table if not exists bm_friends (       -- each friendship is stored both ways (a sees b, b sees a)
+  a text not null references bm_members(id) on delete cascade,
+  b text not null references bm_members(id) on delete cascade,
+  since timestamptz not null default now(),
+  primary key (a, b),
+  check (a <> b)
 );
-create table if not exists bm_club_members (
-  club_id bigint not null references bm_clubs(id) on delete cascade,
-  member_id text not null references bm_members(id) on delete cascade,
-  joined_at timestamptz not null default now(),
-  primary key (club_id, member_id)
-);
-create index if not exists bm_club_members_member on bm_club_members (member_id);
 create table if not exists bm_messages (
   id bigint generated always as identity primary key,
-  club_id bigint not null references bm_clubs(id) on delete cascade,
-  member_id text references bm_members(id) on delete set null,
+  member_id text references bm_members(id) on delete set null,       -- who wrote it
+  owner text not null references bm_members(id) on delete cascade,   -- whose thread: the writer of a post; for a comment, the post's writer
   kind text not null default 'msg' check (kind in ('msg', 'event')),   -- event: a book finished, a new level ... (body is a small JSON)
   body text not null check (char_length(body) between 1 and 500),
+  reply_to bigint references bm_messages(id) on delete set null,     -- a comment on this message
   created_at timestamptz not null default now()
 );
-alter table bm_messages add column if not exists reply_to bigint references bm_messages(id) on delete set null;   -- a comment on another message
-create index if not exists bm_messages_club on bm_messages (club_id, id desc);
+create index if not exists bm_messages_owner on bm_messages (owner, id desc);
 create index if not exists bm_messages_member on bm_messages (member_id, created_at desc);
 create table if not exists bm_bravo (
   message_id bigint not null references bm_messages(id) on delete cascade,
@@ -49,15 +46,16 @@ create table if not exists bm_bravo (
 );
 
 alter table bm_members enable row level security;
-alter table bm_clubs enable row level security;
-alter table bm_club_members enable row level security;
+alter table bm_friends enable row level security;
 alter table bm_messages enable row level security;
 alter table bm_bravo enable row level security;
-revoke all on bm_members, bm_clubs, bm_club_members, bm_messages, bm_bravo from public;
-do $$ begin
-  if exists (select 1 from pg_roles where rolname = 'anon') then
-    revoke all on bm_members, bm_clubs, bm_club_members, bm_messages, bm_bravo from anon, authenticated;
-  end if;
+revoke all on bm_members, bm_friends, bm_messages, bm_bravo from public;
+do $$ declare r text; begin
+  foreach r in array array['anon', 'authenticated'] loop
+    if exists (select 1 from pg_roles where rolname = r) then
+      execute format('revoke all on bm_members, bm_friends, bm_messages, bm_bravo from %I', r);
+    end if;
+  end loop;
 end $$;
 
 -- ---------- helpers (not callable from outside)
@@ -70,21 +68,24 @@ begin
   end if;
 end $$;
 
-create or replace function bm__in(p_member text, p_club bigint) returns void
-language plpgsql stable security definer set search_path = public as $$
-begin
-  if not exists (select 1 from bm_club_members where club_id = p_club and member_id = p_member) then
-    raise exception 'bm:notmember';
-  end if;
-end $$;
+-- may p_me see the threads of p_owner? (themselves or a friend)
+create or replace function bm__sees(p_me text, p_owner text) returns boolean
+language sql stable security definer set search_path = public as $$
+  select p_me = p_owner or exists (select 1 from bm_friends where a = p_me and b = p_owner)
+$$;
 
 create or replace function bm__code() returns text
 language plpgsql volatile security definer set search_path = public as $$
 declare a text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; b bytea := uuid_send(gen_random_uuid()); c text := '';
 begin
-  for i in 0..5 loop c := c || substr(a, get_byte(b, i) % 32 + 1, 1); end loop;
+  for i in 0..7 loop c := c || substr(a, get_byte(b, i) % 32 + 1, 1); end loop;
   return c;
 end $$;
+
+create or replace function bm__norm(p text) returns text
+language sql immutable security definer set search_path = public as $$
+  select upper(regexp_replace(coalesce(p, ''), '[^A-Za-z0-9]', '', 'g'))
+$$;
 
 create or replace function bm__name(p text, maxlen int) returns text
 language plpgsql immutable security definer set search_path = public as $$
@@ -94,21 +95,35 @@ begin
   return n;
 end $$;
 
--- the member's clubs, oldest first, with the newest message id (for the unread dot)
-create or replace function bm__clubs(p_member text) returns json
+-- a fresh personal code for the member
+create or replace function bm__newcode(p_member text) returns text
+language plpgsql volatile security definer set search_path = public as $$
+declare c text;
+begin
+  loop
+    c := bm__code();
+    begin
+      update bm_members set code = c where id = p_member;
+      return c;
+    exception when unique_violation then
+      -- that code is taken: draw another
+    end;
+  end loop;
+end $$;
+
+-- what the phone needs to know about itself: name, code, number of friends, the newest message from someone else
+create or replace function bm__info(p_member text) returns json
 language sql stable security definer set search_path = public as $$
-  select coalesce(json_agg(json_build_object(
-      'id', c.id, 'code', c.code, 'name', c.name, 'rules', c.rules, 'owner', c.owner,
-      'n', (select count(*) from bm_club_members x where x.club_id = c.id),
-      'last', (select max(m.id) from bm_messages m where m.club_id = c.id)
-    ) order by cm.joined_at), '[]'::json)
-  from bm_club_members cm join bm_clubs c on c.id = cm.club_id
-  where cm.member_id = p_member
+  select json_build_object('name', m.name, 'code', m.code, 'backup_at', m.backup_at,
+      'friends', (select count(*) from bm_friends f where f.a = m.id),
+      'last', (select max(x.id) from bm_messages x
+               where (x.owner = m.id or x.owner in (select f.b from bm_friends f where f.a = m.id)) and x.member_id is distinct from m.id))
+  from bm_members m where m.id = p_member
 $$;
 
 -- ---------- the API
 
--- New phone, or a new name for the same phone. Returns the member's clubs.
+-- New phone, or a new name for the same phone.
 create or replace function bm_register(p_id text, p_key text, p_name text) returns json
 language plpgsql volatile security definer set search_path = public as $$
 declare n text := bm__name(p_name, 24);
@@ -120,10 +135,11 @@ begin
     on conflict (id) do nothing;
   perform bm__me(p_id, p_key);   -- the id was taken with another key
   update bm_members set name = n, seen_at = now() where id = p_id;
-  return json_build_object('name', n, 'clubs', bm__clubs(p_id));
+  if (select code from bm_members where id = p_id) is null then perform bm__newcode(p_id); end if;
+  return bm__info(p_id);
 end $$;
 
--- The phone sends what friends see (after each reading and when the app opens). Returns the clubs.
+-- The phone sends what friends see (after each reading and when the app opens).
 create or replace function bm_sync(p_id text, p_key text, p_stats jsonb) returns json
 language plpgsql volatile security definer set search_path = public as $$
 begin
@@ -134,156 +150,126 @@ begin
   else
     update bm_members set seen_at = now() where id = p_id;
   end if;
-  return (select json_build_object('name', m.name, 'backup_at', m.backup_at, 'clubs', bm__clubs(p_id)) from bm_members m where m.id = p_id);
+  return bm__info(p_id);
 end $$;
 
--- A club's name and size by its code, before joining (the invite screen).
+-- Whose code is this? (the invite screen shows the name before adding)
 create or replace function bm_peek(p_code text) returns json
 language sql stable security definer set search_path = public as $$
-  select json_build_object('name', c.name, 'n', (select count(*) from bm_club_members x where x.club_id = c.id))
-  from bm_clubs c where c.code = upper(btrim(coalesce(p_code, '')))
+  select json_build_object('name', name) from bm_members where code = bm__norm(p_code) and char_length(bm__norm(p_code)) = 8
 $$;
 
-create or replace function bm_create_club(p_id text, p_key text, p_name text, p_rules text default 'A') returns json
+-- Add a friend by their code: friends both ways. A wrong code is an answer, not an error, so the try is counted
+-- (30 wrong codes a day at most).
+create or replace function bm_add(p_id text, p_key text, p_code text) returns json
 language plpgsql volatile security definer set search_path = public as $$
-declare n text := bm__name(p_name, 40); v_code text; v_id bigint;
+declare v text; v_name text; c text := bm__norm(p_code);
 begin
   perform bm__me(p_id, p_key);
-  if (select count(*) from bm_club_members where member_id = p_id) >= 5 then raise exception 'bm:limit'; end if;
-  loop
-    v_code := bm__code();
-    begin
-      insert into bm_clubs (code, name, rules, owner) values (v_code, n, coalesce(p_rules, 'A'), p_id) returning id into v_id;
-      exit;
-    exception when unique_violation then
-      -- that code is taken: draw another
-    end;
-  end loop;
-  insert into bm_club_members (club_id, member_id) values (v_id, p_id);
-  return json_build_object('id', v_id, 'code', v_code, 'clubs', bm__clubs(p_id));
-end $$;
-
-create or replace function bm_join(p_id text, p_key text, p_code text) returns json
-language plpgsql volatile security definer set search_path = public as $$
-declare v_id bigint;
-begin
-  perform bm__me(p_id, p_key);
-  select id into v_id from bm_clubs where code = upper(btrim(coalesce(p_code, '')));
-  if v_id is null then raise exception 'bm:nocode'; end if;
-  if not exists (select 1 from bm_club_members where club_id = v_id and member_id = p_id) then
-    if (select count(*) from bm_club_members where member_id = p_id) >= 5 then raise exception 'bm:limit'; end if;
-    if (select count(*) from bm_club_members where club_id = v_id) >= 50 then raise exception 'bm:full'; end if;
-    insert into bm_club_members (club_id, member_id) values (v_id, p_id);
-    insert into bm_messages (club_id, member_id, kind, body) values (v_id, p_id, 'event', '{"t":"join"}');
+  if exists (select 1 from bm_members where id = p_id and fails >= 30 and fails_at > now() - interval '1 day') then
+    raise exception 'bm:slow';
   end if;
-  return json_build_object('id', v_id, 'clubs', bm__clubs(p_id));
-end $$;
-
--- Leaving: the last one out closes the club; if the owner leaves, the longest member takes over.
-create or replace function bm_leave(p_id text, p_key text, p_club bigint) returns json
-language plpgsql volatile security definer set search_path = public as $$
-begin
-  perform bm__me(p_id, p_key);
-  delete from bm_club_members where club_id = p_club and member_id = p_id;
-  if not exists (select 1 from bm_club_members where club_id = p_club) then
-    delete from bm_clubs where id = p_club;
-  elsif (select owner from bm_clubs where id = p_club) is not distinct from p_id then
-    update bm_clubs set owner = (select member_id from bm_club_members where club_id = p_club order by joined_at limit 1) where id = p_club;
+  select id, name into v, v_name from bm_members where code = c and char_length(c) = 8;
+  if v is null then
+    update bm_members set fails = case when fails_at is null or fails_at < now() - interval '1 day' then 1 else fails + 1 end,
+      fails_at = case when fails_at is null or fails_at < now() - interval '1 day' then now() else fails_at end
+      where id = p_id;
+    return json_build_object('ok', false, 'err', 'nocode');
   end if;
-  return bm__clubs(p_id);
-end $$;
-
--- Owner only: rename the club, change its points rules, or remove a member.
-create or replace function bm_club_set(p_id text, p_key text, p_club bigint, p_name text default null, p_rules text default null) returns json
-language plpgsql volatile security definer set search_path = public as $$
-begin
-  perform bm__me(p_id, p_key);
-  update bm_clubs set name = case when p_name is null then name else bm__name(p_name, 40) end, rules = coalesce(p_rules, rules)
-    where id = p_club and owner = p_id;
-  if not found then raise exception 'bm:owner'; end if;
-  if p_rules is not null then
-    insert into bm_messages (club_id, member_id, kind, body) values (p_club, p_id, 'event', json_build_object('t', 'rules', 'v', p_rules)::text);
+  if v = p_id then return json_build_object('ok', false, 'err', 'self'); end if;
+  if not exists (select 1 from bm_friends where a = p_id and b = v) then
+    if (select count(*) from bm_friends where a = p_id) >= 100 or (select count(*) from bm_friends where a = v) >= 100 then
+      raise exception 'bm:limit';
+    end if;
+    insert into bm_friends (a, b) values (p_id, v), (v, p_id) on conflict do nothing;
   end if;
-  return bm__clubs(p_id);
+  return json_build_object('ok', true, 'friend', json_build_object('id', v, 'name', v_name), 'me', bm__info(p_id));
 end $$;
 
-create or replace function bm_kick(p_id text, p_key text, p_club bigint, p_member text) returns json
+-- No longer friends (both ways).
+create or replace function bm_unfriend(p_id text, p_key text, p_friend text) returns json
 language plpgsql volatile security definer set search_path = public as $$
 begin
   perform bm__me(p_id, p_key);
-  if not exists (select 1 from bm_clubs where id = p_club and owner = p_id) or p_member = p_id then raise exception 'bm:owner'; end if;
-  delete from bm_club_members where club_id = p_club and member_id = p_member;
-  return bm__clubs(p_id);
+  delete from bm_friends where (a = p_id and b = p_friend) or (a = p_friend and b = p_id);
+  return bm__info(p_id);
 end $$;
 
--- The leaderboard: the club and every member's name and stats (each phone works out the points itself, see core.js).
-create or replace function bm_board(p_id text, p_key text, p_club bigint) returns json
+-- A new personal code (the old one stops working; friends stay friends).
+create or replace function bm_newcode(p_id text, p_key text) returns json
+language plpgsql volatile security definer set search_path = public as $$
+begin
+  perform bm__me(p_id, p_key);
+  perform bm__newcode(p_id);
+  return bm__info(p_id);
+end $$;
+
+-- The leaderboard: me and my friends, each with name and stats (each phone works out the points itself, see core.js).
+create or replace function bm_board(p_id text, p_key text) returns json
 language plpgsql stable security definer set search_path = public as $$
 begin
   perform bm__me(p_id, p_key);
-  perform bm__in(p_id, p_club);
-  return (select json_build_object(
-      'club', json_build_object('id', c.id, 'code', c.code, 'name', c.name, 'rules', c.rules, 'owner', c.owner),
-      'last', (select max(m.id) from bm_messages m where m.club_id = c.id),
-      'members', (select json_agg(json_build_object('id', m.id, 'name', m.name, 'stats', m.stats, 'joined', cm.joined_at, 'seen', m.seen_at) order by cm.joined_at)
-                  from bm_club_members cm join bm_members m on m.id = cm.member_id where cm.club_id = c.id))
-    from bm_clubs c where c.id = p_club);
+  return json_build_object(
+    'last', (bm__info(p_id))->'last',
+    'members', (select json_agg(x order by x.ord, x.since) from (
+        select m.id, m.name, m.stats, m.created_at as since, m.seen_at as seen, 0 as ord from bm_members m where m.id = p_id
+        union all
+        select m.id, m.name, m.stats, f.since, m.seen_at, 1 from bm_friends f join bm_members m on m.id = f.b where f.a = p_id) x));
 end $$;
 
--- The chat: the newest 60 messages (or the 60 before p_before), oldest first, each with the ids of who said bravo.
-create or replace function bm_feed(p_id text, p_key text, p_club bigint, p_before bigint default null) returns json
+-- The feed: the newest 60 messages I may see (or the 60 before p_before), oldest first, each with who said bravo.
+create or replace function bm_feed(p_id text, p_key text, p_before bigint default null) returns json
 language plpgsql stable security definer set search_path = public as $$
 begin
   perform bm__me(p_id, p_key);
-  perform bm__in(p_id, p_club);
   return coalesce((select json_agg(x order by x.id) from (
-      select m.id, m.member_id as who, coalesce(mm.name, '') as name, m.kind, m.body, m.created_at as at, m.reply_to as re,
+      select m.id, m.member_id as who, coalesce(mm.name, '') as name, m.owner, m.kind, m.body, m.created_at as at, m.reply_to as re,
         coalesce((select json_agg(b.member_id) from bm_bravo b where b.message_id = m.id), '[]'::json) as bravo
       from bm_messages m left join bm_members mm on mm.id = m.member_id
-      where m.club_id = p_club and (p_before is null or m.id < p_before)
+      where (m.owner = p_id or m.owner in (select f.b from bm_friends f where f.a = p_id)) and (p_before is null or m.id < p_before)
       order by m.id desc limit 60) x), '[]'::json);
 end $$;
 
--- A chat message, or with p_reply a comment on another message of the same club.
-create or replace function bm_post(p_id text, p_key text, p_club bigint, p_body text, p_reply bigint default null) returns json
+-- A post to my friends, or with p_reply a comment on a message I can see (it joins that message's thread).
+create or replace function bm_post(p_id text, p_key text, p_body text, p_reply bigint default null) returns json
 language plpgsql volatile security definer set search_path = public as $$
-declare b text := btrim(coalesce(p_body, '')); v_id bigint;
+declare b text := btrim(coalesce(p_body, '')); v_id bigint; o text := p_id;
 begin
   perform bm__me(p_id, p_key);
-  perform bm__in(p_id, p_club);
   if char_length(b) < 1 or char_length(b) > 500 then raise exception 'bm:bad'; end if;
-  if p_reply is not null and not exists (select 1 from bm_messages where id = p_reply and club_id = p_club) then raise exception 'bm:gone'; end if;
+  if p_reply is not null then
+    select owner into o from bm_messages where id = p_reply;
+    if o is null or not bm__sees(p_id, o) then raise exception 'bm:gone'; end if;
+  end if;
   if (select count(*) from bm_messages where member_id = p_id and created_at > now() - interval '1 minute') >= 20 then raise exception 'bm:slow'; end if;
-  insert into bm_messages (club_id, member_id, kind, body, reply_to) values (p_club, p_id, 'msg', b, p_reply) returning id into v_id;
+  insert into bm_messages (member_id, owner, kind, body, reply_to) values (p_id, o, 'msg', b, p_reply) returning id into v_id;
   return json_build_object('id', v_id);
 end $$;
 
--- A moment worth a bravo (a finished book, a new level, a streak), posted to all the member's clubs, or with p_club to one
--- (the week's win). The same moment from the same member is posted once per club (the phone may report it twice).
-create or replace function bm_event(p_id text, p_key text, p_body jsonb, p_club bigint default null) returns json
+-- A moment worth a bravo (a finished book, a new level, a streak) for my friends. The same moment is posted once
+-- (the phone may report it twice).
+create or replace function bm_event(p_id text, p_key text, p_body jsonb) returns json
 language plpgsql volatile security definer set search_path = public as $$
-declare b text := p_body::text; n int := 0; r record;
+declare b text := p_body::text;
 begin
   perform bm__me(p_id, p_key);
   if jsonb_typeof(p_body) <> 'object' or char_length(b) > 500 then raise exception 'bm:bad'; end if;
-  for r in select club_id from bm_club_members where member_id = p_id and (p_club is null or club_id = p_club) loop
-    if not exists (select 1 from bm_messages where club_id = r.club_id and member_id = p_id and kind = 'event' and body::jsonb = p_body) then
-      insert into bm_messages (club_id, member_id, kind, body) values (r.club_id, p_id, 'event', b);
-      n := n + 1;
-    end if;
-  end loop;
-  return json_build_object('posted', n);
+  if exists (select 1 from bm_messages where owner = p_id and member_id = p_id and kind = 'event' and body::jsonb = p_body) then
+    return json_build_object('posted', 0);
+  end if;
+  if (select count(*) from bm_messages where member_id = p_id and created_at > now() - interval '1 minute') >= 20 then raise exception 'bm:slow'; end if;
+  insert into bm_messages (member_id, owner, kind, body) values (p_id, p_id, 'event', b);
+  return json_build_object('posted', 1);
 end $$;
 
 -- Bravo on a message, or take it back. Returns who says bravo now.
 create or replace function bm_bravo(p_id text, p_key text, p_msg bigint) returns json
 language plpgsql volatile security definer set search_path = public as $$
-declare v_club bigint;
+declare o text;
 begin
   perform bm__me(p_id, p_key);
-  select club_id into v_club from bm_messages where id = p_msg;
-  if v_club is null then raise exception 'bm:gone'; end if;
-  perform bm__in(p_id, v_club);
+  select owner into o from bm_messages where id = p_msg;
+  if o is null or not bm__sees(p_id, o) then raise exception 'bm:gone'; end if;
   if exists (select 1 from bm_bravo where message_id = p_msg and member_id = p_id) then
     delete from bm_bravo where message_id = p_msg and member_id = p_id;
   else
@@ -292,13 +278,12 @@ begin
   return coalesce((select json_agg(member_id) from bm_bravo where message_id = p_msg), '[]'::json);
 end $$;
 
--- Delete a message: your own, or any in a club you own.
+-- Delete a message: my own, or any comment in my own thread.
 create or replace function bm_unsay(p_id text, p_key text, p_msg bigint) returns json
 language plpgsql volatile security definer set search_path = public as $$
 begin
   perform bm__me(p_id, p_key);
-  delete from bm_messages m where m.id = p_msg
-    and (m.member_id = p_id or exists (select 1 from bm_clubs c where c.id = m.club_id and c.owner = p_id));
+  delete from bm_messages where id = p_msg and (member_id = p_id or owner = p_id);
   return json_build_object('ok', found);
 end $$;
 
@@ -319,32 +304,31 @@ begin
   return (select json_build_object('at', backup_at, 'data', backup, 'name', name) from bm_members where id = p_id);
 end $$;
 
--- Delete me: my name, stats, backup and club places; my messages stay without a name.
+-- Delete me: my name, stats, backup, friendships and my own threads; my comments elsewhere stay without a name.
 create or replace function bm_forget(p_id text, p_key text) returns json
 language plpgsql volatile security definer set search_path = public as $$
-declare r record;
 begin
   perform bm__me(p_id, p_key);
-  for r in select club_id from bm_club_members where member_id = p_id loop
-    perform bm_leave(p_id, p_key, r.club_id);
-  end loop;
   delete from bm_members where id = p_id;
   return json_build_object('ok', true);
 end $$;
 
--- Keeps a free Supabase project awake (a daily call from GitHub Actions, see .github/workflows/keep-awake.yml).
+-- A health check (the install script and GitHub's daily check call it).
 create or replace function bm_ping() returns text language sql stable as $$ select 'ok'::text $$;
 
--- Who may call what: the helpers are closed, the API is open to the public key.
-revoke execute on function bm__me(text, text), bm__in(text, bigint), bm__code(), bm__name(text, int), bm__clubs(text) from public;
-do $$ begin
-  if exists (select 1 from pg_roles where rolname = 'anon') then
-    revoke execute on function bm__me(text, text), bm__in(text, bigint), bm__code(), bm__name(text, int), bm__clubs(text) from anon, authenticated;
-    grant execute on function bm_register(text, text, text), bm_sync(text, text, jsonb), bm_peek(text),
-      bm_create_club(text, text, text, text), bm_join(text, text, text), bm_leave(text, text, bigint),
-      bm_club_set(text, text, bigint, text, text), bm_kick(text, text, bigint, text), bm_board(text, text, bigint),
-      bm_feed(text, text, bigint, bigint), bm_post(text, text, bigint, text, bigint), bm_event(text, text, jsonb, bigint),
-      bm_bravo(text, text, bigint), bm_unsay(text, text, bigint), bm_backup_put(text, text, jsonb),
-      bm_backup_get(text, text), bm_forget(text, text), bm_ping() to anon, authenticated;
-  end if;
+-- Who may call what: the helpers are closed, the API is open to the API's public role.
+revoke execute on function bm__me(text, text), bm__sees(text, text), bm__code(), bm__norm(text), bm__name(text, int),
+  bm__newcode(text), bm__info(text) from public;
+do $$ declare r text; begin
+  foreach r in array array['anon', 'authenticated'] loop
+    if exists (select 1 from pg_roles where rolname = r) then
+      execute format('revoke execute on function bm__me(text, text), bm__sees(text, text), bm__code(), bm__norm(text),
+        bm__name(text, int), bm__newcode(text), bm__info(text) from %I', r);
+      execute format('grant execute on function bm_register(text, text, text), bm_sync(text, text, jsonb), bm_peek(text),
+        bm_add(text, text, text), bm_unfriend(text, text, text), bm_newcode(text, text), bm_board(text, text),
+        bm_feed(text, text, bigint), bm_post(text, text, text, bigint), bm_event(text, text, jsonb),
+        bm_bravo(text, text, bigint), bm_unsay(text, text, bigint), bm_backup_put(text, text, jsonb),
+        bm_backup_get(text, text), bm_forget(text, text), bm_ping() to %I', r);
+    end if;
+  end loop;
 end $$;

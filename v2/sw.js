@@ -1,7 +1,7 @@
 // Keeps Bralni mentor 2 working without internet. Network first and past the browser's own cache (GitHub Pages lets browsers keep
 // files for 10 minutes), so a new version arrives the moment the app is opened with a connection.
 // The first Bralni mentor lives one folder up with its own cache ('bralni-mentor-v…'); this one only ever touches caches named 'bm2-'.
-const CACHE = 'bm2-v1';
+const CACHE = 'bm2-v2';
 const FILES = ['./', 'index.html', 'app.js', 'core.js', 'kid.js', 'club.js', 'config.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'fonts/figtree.woff2', 'fonts/newsreader-semibold.woff2'];
 
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES.map(f => new Request(f, { cache: 'reload' }))))); self.skipWaiting(); });

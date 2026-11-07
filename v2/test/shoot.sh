@@ -1,6 +1,6 @@
 #!/bin/bash
-# Screenshots of the friends' screens with example data: test/friends-a.png (board, chat, a friend, club settings),
-# friends-b.png (first visit, invite, all-time board, Danes with the club line), friends-c.png (Napredek with the cloud backup).
+# Screenshots of the friends' screens with example data: test/friends-a.png (board, chat, a friend, settings),
+# friends-b.png (first visit, invite, no friends yet, adding a friend), friends-d.png (all-time board, Danes with the friends line), friends-c.png (Napredek with the cloud backup).
 # Serve the repo first: docker run -d --rm --name rg-serve -p 127.0.0.1:8765:8765 -v "<repo>:/app" -w /app python:3.12-slim python3 -m http.server 8765
 cd "$(dirname "$0")"
 EDGE="/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe"
@@ -8,4 +8,5 @@ shot() { local T; T=$(cygpath -w "$(mktemp -d)"); "$EDGE" --headless=new --disab
 shot 'http://127.0.0.1:8765/v2/test/screens.html?a' 1632,1524 friends-a.png
 shot 'http://127.0.0.1:8765/v2/test/screens.html?b' 1632,1524 friends-b.png
 shot 'http://127.0.0.1:8765/v2/test/screens.html?c' 414,1524 friends-c.png
+shot 'http://127.0.0.1:8765/v2/test/screens.html?d' 816,1524 friends-d.png
 ls -la friends-*.png

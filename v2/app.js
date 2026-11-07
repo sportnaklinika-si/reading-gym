@@ -741,6 +741,7 @@ function demoState() {
   // the friends' screens: a friend's details, the club settings, the chat
   if (DEMO && HASH === '#demo-member') Club.sheetMember('demoana00000000a');
   if (DEMO && HASH === '#demo-club') Club.sheetSettings();
+  if (DEMO && HASH === '#demo-friends-add') Club.sheetAdd();
   if (DEMO && HASH === '#demo-chat') { const go = () => document.getElementById('fr-chat').scrollIntoView(); go(); setTimeout(go, 1500); }
   if (DEMO && HASH === '#demo-today-club') { Club.demo('#demo-friends'); view = 'today'; render(); }
   if (DEMO && HASH === '#demo-backup') { Club.demo('#demo-friends'); view = 'stats'; render(); const go = () => window.scrollTo(0, document.body.scrollHeight); go(); setTimeout(go, 1500); }
