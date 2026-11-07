@@ -54,4 +54,6 @@ and the publishable key in `config.js`, push. While `config.js` is empty, the Pr
 
 ## Making it the main version later
 Copy `v2/*` (without `test/`, `server/`) over the root files, keep the root `manifest.webmanifest` name/id or change it, and turn
-`v2/` into a page that forwards to `../`. The data needs nothing: both already use the same storage.
+`v2/` into a page that forwards to `../`. The data needs nothing: both already use the same storage. Two spots name the
+folder: the `/v2/sw.js` check in `app.js` (so the worker's first take-over is not treated as an update) and `v2/config.js`
+in `.github/workflows/keep-awake.yml`.

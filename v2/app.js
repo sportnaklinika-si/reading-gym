@@ -750,7 +750,8 @@ function demoState() {
   // updates: look for a new version every time the app comes back to the screen (a home-screen app often resumes without
   // reloading) and switch to it at once, unless the timer is running; then right after the reading is saved or thrown away
   if (!DEMO && 'serviceWorker' in navigator && location.protocol === 'https:') {
-    const hadCtrl = !!navigator.serviceWorker.controller;
+    // On the first visit the first version's worker (one folder up) may be in charge; this version's own taking over is not an update.
+    const hadCtrl = !!(navigator.serviceWorker.controller && /\/v2\/sw\.js$/.test(navigator.serviceWorker.controller.scriptURL));
     navigator.serviceWorker.addEventListener('controllerchange', () => { if (!hadCtrl) return; if (S && S.run) reloadAfterRun = true; else location.reload(); });
     navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(r => { swReg = r; }).catch(() => {});
   }
