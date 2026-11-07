@@ -105,7 +105,7 @@
   }
 
   // ---------- the friends' leaderboard: points per week (Monday to Sunday)
-  // Three sets of rules; each club picks one (default A). For every day of the week up to yesterday, and today once it counts:
+  // Three sets of rules; the friends' board uses A (Jan's pick, B and C stay for later). For every day of the week up to yesterday, and today once it counts:
   //   a reading day (at least `min` minutes) earns `day` points, every `per` minutes earn 1 point (at most `cap` a day),
   //   a day without any reading costs `miss` points, and seven reading days in the week add `week`.
   //   A short day (some reading, under `min`) earns only its minute points: something is better than nothing.
