@@ -127,4 +127,7 @@ assert.ok(r.backup_at);
 await rpc('bm_forget', { ...id(B) });
 await fails(rpc('bm_sync', { ...id(B), p_stats: null }), 'bm:auth');
 assert.equal(await rpc('bm_ping', {}), 'ok');
+// leave nothing behind (this test also runs once against the real server)
+await rpc('bm_forget', { ...id(A) }); await rpc('bm_forget', { ...id(C) });
+await fails(rpc('bm_sync', { ...id(A), p_stats: null }), 'bm:auth');
 console.log('server: all checks passed');
