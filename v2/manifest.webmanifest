@@ -1,0 +1,18 @@
+{
+  "id": "./",
+  "name": "Bralni mentor 2",
+  "short_name": "Mentor 2",
+  "description": "Meri čas branja, ohranjaj niz, rasti od novinca do razsvetljenega bralca in beri s prijatelji.",
+  "lang": "sl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ECEBE4",
+  "theme_color": "#ECEBE4",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

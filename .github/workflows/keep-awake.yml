@@ -1,0 +1,20 @@
+# Bralni mentor 2: a free Supabase project goes to sleep after a week without visitors. One small call a day keeps the
+# friends' server awake. The address and the public key come from v2/config.js; while it is empty, this does nothing.
+name: Keep the friends' server awake
+on:
+  schedule:
+    - cron: '17 5 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Call bm_ping
+        run: |
+          URL=$(sed -n "s/.*url: '\([^']*\)'.*/\1/p" v2/config.js)
+          KEY=$(sed -n "s/.*key: '\([^']*\)'.*/\1/p" v2/config.js)
+          if [ -z "$URL" ]; then echo "No server in v2/config.js yet."; exit 0; fi
+          curl -fsS -X POST "$URL/rpc/bm_ping" -H "apikey: $KEY" -H "Content-Type: application/json" -d '{}'
