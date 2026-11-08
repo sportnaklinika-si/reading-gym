@@ -51,7 +51,13 @@ phone's id and secret key (the server keeps only a hash). `server/self-host/` ru
 - `.github/workflows/keep-awake.yml` (repo root) calls `bm_ping` once a day; if the server or its certificate fails, GitHub
   e-mails the repository owner.
 
-`config.js` holds the address (`https://<IP>:8443`). While it is empty, the Prijatelji tab says friends aren't on yet.
+**Live since 8. 11. 2026:** `https://169.58.22.70:8443` (Ubuntu 24.04; Docker 29 and nginx 1.24 from Ubuntu, installed for this;
+the server had nothing else on it yet). Access: the key `~/.ssh/bralni_mentor_ed25519` on Jan's laptop (root). Update the
+server: copy `server/self-host/*` and `server/schema.sql` to `/opt/bralni-mentor` and run `./install.sh` there.
+For the website later: nginx already runs on port 80 (Ubuntu's default site plus our block for the bare IP); put the website
+in its own `sites-enabled` file next to ours. Port 8443 and the bare IP on port 80 must stay with this app.
+
+`config.js` holds the address. While it is empty, the Prijatelji tab says friends aren't on yet.
 A Supabase project would work as well (its API address + `/rest/v1` and public key in `config.js`).
 
 ## Checks
@@ -60,7 +66,8 @@ A Supabase project would work as well (its API address + `/rest/v1` and public k
   to prove the schema closes the tables itself); then
   `docker run --rm --network bm-test -v "<repo>:/app" -w /app node:24-alpine node test/server/api.test.mjs` runs every function
   (registering, codes, friends both ways, who sees which posts and comments, bravo, deleting, the guessing limit, the
-  posting limit, backup, deleting a profile). The same test runs against the real server with `BM_URL=https://<IP>:8443`.
+  posting limit, backup, deleting a profile). On the real server it runs there against the API directly (`docker run --network host -e
+  BM_URL=http://127.0.0.1:3000 ...`): through nginx it trips the rate limit (10 calls a second per address, burst 40).
 - The self-host package was tested the same way: `install.sh` in a fresh folder, the API test against it, a second
   `install.sh` run, the nightly dump and a restore from it; `cert.sh`'s lego call against Pebble (Let's Encrypt's test
   server: an IP certificate, and a second run that skips renewal); nginx 1.24 accepts the site file.

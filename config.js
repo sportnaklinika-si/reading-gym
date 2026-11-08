@@ -2,4 +2,4 @@
 // are closed and every function checks the phone's own secret key. (A Supabase project works too: its API address +
 // /rest/v1 and its public key.)
 // Empty url: the Prijatelji tab says friends aren't switched on yet, everything else works as before.
-window.BM_SERVER = { url: '', key: '' };
+window.BM_SERVER = { url: 'https://169.58.22.70:8443', key: '' };
