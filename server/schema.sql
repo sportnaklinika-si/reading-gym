@@ -39,6 +39,10 @@ create table if not exists bm_messages (
 );
 create index if not exists bm_messages_owner on bm_messages (owner, id desc);
 create index if not exists bm_messages_member on bm_messages (member_id, created_at desc);
+-- the books friends see on my profile: what I am reading, what I have read with my ratings, my favourites (fetched only
+-- when a friend opens the profile, so the board that every phone polls stays small)
+alter table bm_members add column if not exists shelf jsonb;
+alter table bm_members add column if not exists shelf_at timestamptz;
 create table if not exists bm_bravo (
   message_id bigint not null references bm_messages(id) on delete cascade,
   member_id text not null references bm_members(id) on delete cascade,
@@ -151,6 +155,25 @@ begin
     update bm_members set seen_at = now() where id = p_id;
   end if;
   return bm__info(p_id);
+end $$;
+
+-- My books for my friends (null: I don't share them). The phone sends it when its books change.
+create or replace function bm_shelf_put(p_id text, p_key text, p_shelf jsonb) returns json
+language plpgsql volatile security definer set search_path = public as $$
+begin
+  perform bm__me(p_id, p_key);
+  if p_shelf is not null and (jsonb_typeof(p_shelf) <> 'object' or pg_column_size(p_shelf) > 65536) then raise exception 'bm:big'; end if;
+  update bm_members set shelf = p_shelf, shelf_at = case when p_shelf is null then null else now() end where id = p_id;
+  return json_build_object('at', now());
+end $$;
+
+-- A friend's books (or my own), for their profile.
+create or replace function bm_shelf(p_id text, p_key text, p_member text) returns json
+language plpgsql stable security definer set search_path = public as $$
+begin
+  perform bm__me(p_id, p_key);
+  if not bm__sees(p_id, p_member) or not exists (select 1 from bm_members where id = p_member) then raise exception 'bm:gone'; end if;
+  return (select json_build_object('shelf', shelf, 'at', shelf_at) from bm_members where id = p_member);
 end $$;
 
 -- Whose code is this? (the invite screen shows the name before adding)
@@ -328,7 +351,7 @@ do $$ declare r text; begin
         bm_add(text, text, text), bm_unfriend(text, text, text), bm_newcode(text, text), bm_board(text, text),
         bm_feed(text, text, bigint), bm_post(text, text, text, bigint), bm_event(text, text, jsonb),
         bm_bravo(text, text, bigint), bm_unsay(text, text, bigint), bm_backup_put(text, text, jsonb),
-        bm_backup_get(text, text), bm_forget(text, text), bm_ping() to %I', r);
+        bm_backup_get(text, text), bm_shelf_put(text, text, jsonb), bm_shelf(text, text, text), bm_forget(text, text), bm_ping() to %I', r);
     end if;
   end loop;
 end $$;

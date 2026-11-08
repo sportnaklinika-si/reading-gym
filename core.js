@@ -141,6 +141,49 @@
     return { total, days: out, read, minutes, full, bonus: full ? R.week : 0 };
   }
 
-  const RG = { LEVELS, MARK_EVERY, MARK_MAX, AWAY_ASK, AWAY_LONG, RULES, dayKey, keyDate, addDays, goalFor, dayTotals, streak, level, splitByDay, away, settle, bookTotals, longestRun, weekStart, weekPoints };
+  // ---------- the bookshelf friends see on a profile: the books being read, the books read (newest first) with the
+  // reader's rating (1 to 5 stars) and favourites (f). Titles and authors are cut short; a very long list loses its oldest
+  // books that are not favourites, so it stays well under the server's 64 KB. lastRead = { bookId: 'YYYY-MM-DD' }.
+  const SHELF_BYTES = 40000;
+  const isDay = k => typeof k === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(k);
+  const bytes = x => { const j = JSON.stringify(x); return typeof TextEncoder !== 'undefined' ? new TextEncoder().encode(j).length : j.length * 2; };
+  function shelfOf(books, lastRead) {
+    const L = lastRead || {};
+    const one = b => {
+      const x = { t: (String(b.title || '').trim() || 'Knjiga brez naslova').slice(0, 100) };
+      if (b.author && String(b.author).trim()) x.a = String(b.author).trim().slice(0, 60);
+      if (b.status === 'finished' && b.rate >= 1 && b.rate <= 5) x.r = Math.round(b.rate);
+      if (b.fav) x.f = 1;
+      if (b.status === 'finished' && isDay(b.done)) x.d = b.done;
+      return x;
+    };
+    const reading = books.filter(b => b.status === 'reading')
+      .sort((a, b) => (L[b.id] || b.added || '').localeCompare(L[a.id] || a.added || '')).slice(0, 50).map(one);
+    const fin = books.filter(b => b.status === 'finished').sort((a, b) => (b.done || '').localeCompare(a.done || ''));
+    const out = { v: 1, reading, read: fin.map(one), n: fin.length };
+    while (bytes(out) > SHELF_BYTES) {
+      let i = out.read.length - 1; while (i >= 0 && out.read[i].f) i--;
+      if (i < 0) i = out.read.length - 1;
+      if (i < 0) break;
+      out.read.splice(i, 1);
+    }
+    return out;
+  }
+  // a friend's shelf comes from their phone through the server: keep only well-formed items
+  function cleanShelf(x) {
+    if (!x || typeof x !== 'object' || Array.isArray(x)) return null;
+    const str = (v, n) => typeof v === 'string' && v.trim() ? v.trim().slice(0, n) : '';
+    const item = y => {
+      if (!y || typeof y !== 'object') return null;
+      const t = str(y.t, 100); if (!t) return null;
+      const r = Math.round(Number(y.r));
+      return { t, a: str(y.a, 60), r: r >= 1 && r <= 5 ? r : 0, f: !!y.f, d: isDay(y.d) ? y.d : null };
+    };
+    const list = (v, n) => Array.isArray(v) ? v.slice(0, n).map(item).filter(Boolean) : [];
+    const read = list(x.read, 2000), n = Math.floor(Number(x.n));
+    return { reading: list(x.reading, 50), read, n: Number.isFinite(n) && n >= read.length ? Math.min(n, 1e5) : read.length };
+  }
+
+  const RG = { LEVELS, MARK_EVERY, MARK_MAX, AWAY_ASK, AWAY_LONG, RULES, dayKey, keyDate, addDays, goalFor, dayTotals, streak, level, splitByDay, away, settle, bookTotals, longestRun, weekStart, weekPoints, shelfOf, cleanShelf };
   if (typeof module !== 'undefined' && module.exports) module.exports = RG; else root.RG = RG;
 })(this);

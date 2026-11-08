@@ -59,6 +59,21 @@ assert.deepEqual(r.members.map(m => m.name).sort(), ['Ana', 'Jan', 'Marko']);
 assert.deepEqual((await rpc('bm_board', { ...id(C) })).members.map(m => m.name).sort(), ['Ana', 'Marko']);
 await fails(rpc('bm_sync', { ...id(B), p_stats: { big: 'x'.repeat(30000) } }), 'bm:big');
 
+// the bookshelf on a profile: only friends (and I) can open it; sharing off clears it
+const shelf = { v: 1, reading: [{ t: 'Alamut', a: 'Vladimir Bartol', f: 1 }], read: [{ t: 'Hobit', r: 5, d: '2026-10-01' }], n: 1 };
+assert.equal((await rpc('bm_shelf', { ...id(A), p_member: A.p_id })).shelf, null, 'nothing sent yet');
+assert.ok((await rpc('bm_shelf_put', { ...id(A), p_shelf: shelf })).at);
+assert.deepEqual((await rpc('bm_shelf', { ...id(B), p_member: A.p_id })).shelf, shelf);   // Ana is Jan's friend
+assert.deepEqual((await rpc('bm_shelf', { ...id(A), p_member: A.p_id })).shelf, shelf);   // Jan himself
+await fails(rpc('bm_shelf', { ...id(C), p_member: A.p_id }), 'bm:gone');                   // Marko is not
+await fails(rpc('bm_shelf', { ...id(A), p_member: rnd(16) }), 'bm:gone');
+await fails(rpc('bm_shelf', { p_id: A.p_id, p_key: rnd(32), p_member: A.p_id }), 'bm:auth');
+await fails(rpc('bm_shelf_put', { ...id(A), p_shelf: { read: [{ t: 'x'.repeat(70000) }] } }), 'bm:big');
+await fails(rpc('bm_shelf_put', { ...id(A), p_shelf: [1, 2] }), 'bm:big');
+await rpc('bm_shelf_put', { ...id(A), p_shelf: null });
+assert.deepEqual(await rpc('bm_shelf', { ...id(B), p_member: A.p_id }), { shelf: null, at: null });
+await rpc('bm_shelf_put', { ...id(A), p_shelf: shelf });
+
 // posts: my friends see them, friends of friends don't
 const pJ = (await rpc('bm_post', { ...id(A), p_body: '  Kdo bere kaj ta teden?  ' })).id;
 const pM = (await rpc('bm_post', { ...id(C), p_body: 'Marko tukaj.' })).id;
@@ -114,6 +129,7 @@ r = await rpc('bm_unfriend', { ...id(D), p_friend: A.p_id });
 assert.equal(r.friends, 0);
 assert.deepEqual(await bodies(D), []);
 assert.deepEqual((await rpc('bm_board', { ...id(A) })).members.map(m => m.name), ['Jan', 'Ana']);
+await fails(rpc('bm_shelf', { ...id(D), p_member: A.p_id }), 'bm:gone');   // no longer friends: no more books
 const old = A.code; A.code = (await rpc('bm_newcode', { ...id(A) })).code;
 assert.notEqual(A.code, old);
 assert.deepEqual(await rpc('bm_add', { ...id(D), p_code: old }), { ok: false, err: 'nocode' });

@@ -99,4 +99,30 @@ assert.deepStrictEqual([P.days[0].k, P.days[6].k, P.total], ['2026-10-26', '2026
 // unknown rules fall back to A; no data at all is all misses
 assert.strictEqual(RG.weekPoints('Z', {}, null, '2026-11-03').total, -5);
 
+// the bookshelf friends see: reading (last read first), read (newest first) with ratings and favourites; aside books stay private
+const bk = (id, status, extra) => Object.assign({ id, title: 'Knjiga ' + id, author: '', status, added: '2026-01-01', done: null }, extra);
+let sh = RG.shelfOf([
+  bk('a', 'reading'), bk('b', 'reading', { fav: true, author: 'Bartol' }),
+  bk('c', 'finished', { done: '2026-05-01', rate: 4 }), bk('d', 'finished', { done: '2026-09-01', rate: 5, fav: true }),
+  bk('e', 'aside', { fav: true }), bk('f', 'reading', { rate: 3, title: '' }),
+], { a: '2026-11-01', b: '2026-11-07' });
+assert.deepStrictEqual(sh.reading.map(x => x.t), ['Knjiga b', 'Knjiga a', 'Knjiga brez naslova']);
+assert.deepStrictEqual(sh.reading[0], { t: 'Knjiga b', a: 'Bartol', f: 1 });
+assert.strictEqual(sh.reading[2].r, undefined);   // a rating counts only for a finished book
+assert.deepStrictEqual(sh.read, [{ t: 'Knjiga d', r: 5, f: 1, d: '2026-09-01' }, { t: 'Knjiga c', r: 4, d: '2026-05-01' }]);
+assert.strictEqual(sh.n, 2);
+// a huge list loses its oldest books first, but keeps the favourites
+const many = Array.from({ length: 900 }, (_, i) => bk('m' + i, 'finished', { title: 'Dolg naslov knjige številka ' + i + ' '.repeat(5) + 'x'.repeat(60), author: 'Avtor '.repeat(12), done: RG.addDays('2020-01-01', i), rate: 3, fav: i === 0 }));
+sh = RG.shelfOf(many, {});
+assert.ok(JSON.stringify(sh).length < 40000 && sh.read.length < 900 && sh.n === 900);
+assert.strictEqual(sh.read[0].d, RG.addDays('2020-01-01', 899));   // the newest stays
+assert.ok(sh.read.some(x => x.f));                                  // and the oldest, a favourite, too
+// cleaning what comes from another phone
+assert.strictEqual(RG.cleanShelf(null), null);
+assert.strictEqual(RG.cleanShelf([1]), null);
+const cl = RG.cleanShelf({ reading: [{ t: '  Alamut ', a: 7 }, { t: '' }, 'x'], read: [{ t: 'B'.repeat(300), r: 9, f: 'yes', d: 'včeraj' }, { t: 'C', r: 2.6, d: '2026-01-02' }], n: -4 });
+assert.deepStrictEqual(cl.reading, [{ t: 'Alamut', a: '', r: 0, f: false, d: null }]);
+assert.deepStrictEqual([cl.read[0].t.length, cl.read[0].r, cl.read[0].f, cl.read[0].d], [100, 0, true, null]);
+assert.deepStrictEqual([cl.read[1].r, cl.read[1].d, cl.n], [3, '2026-01-02', 2]);
+
 console.log('core ok');

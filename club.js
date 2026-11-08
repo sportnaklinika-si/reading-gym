@@ -78,8 +78,11 @@ const Club = (() => {
     const fin = S.books.filter(b => b.status === 'finished'), y = t.slice(0, 4);
     return { v: 1, at: new Date().toISOString(), day: t, total: Math.round(tot), level: L.i, streak: st.cur, best: st.best, goal: goalNow(),
       finished: fin.length, year: fin.filter(b => (b.done || '').startsWith(y)).length, reading: shareTitle() ? currentTitle() : null,
-      run: S.run && S.run.at ? S.run.at : 0, days, since };
+      run: S.run && S.run.at ? S.run.at : 0, days, since, shelf: shareTitle() ? 1 : 0 };
   }
+  // my bookshelf for my friends' view of my profile (null when I don't share my books)
+  const lastRead = () => { const BT = RG.bookTotals(S.sessions), L = {}; for (const id of Object.keys(BT)) L[id] = BT[id].last; return L; };
+  const myShelf = () => (shareTitle() ? RG.shelfOf(S.books, lastRead()) : null);
 
   // ---------- sync: after every change (a few seconds later) and when the app opens, send my stats; then the cloud backup
   let syncT = null, lastSent = '', lastSync = 0;
@@ -98,8 +101,14 @@ const Club = (() => {
       lastSent = sig; lastSync = Date.now();
       const before = JSON.stringify(cache.info); useInfo(r);
       paintDot(); if (view === 'friends' && before !== JSON.stringify(cache.info)) render();
-      backup();
+      shelfPut(); backup();
     } catch (e) { if (e.code === 'auth') lost(); }
+  }
+  // the bookshelf goes up only when it changed (a new book, a rating, a favourite, sharing switched on or off)
+  async function shelfPut() {
+    const d = myShelf(), sig = (d ? hash(JSON.stringify(d)) : 'none') + S.me.id;
+    if (lsGet('bm2-shelf-sig') === sig) return;
+    try { await rpc('bm_shelf_put', Object.assign(auth(), { p_shelf: d })); lsSet('bm2-shelf-sig', sig); } catch (e) {}
   }
   // the whole reading log (no cover photos) in the cloud, for a new phone; only when something changed
   const hash = s => { let h = 5381; for (let i = 0; i < s.length; i++) h = (h * 33 + s.charCodeAt(i)) >>> 0; return s.length + '.' + h; };
@@ -124,7 +133,12 @@ const Club = (() => {
     if (a.lvl > b.lvl) event({ t: 'level', v: a.lvl });
     for (const n of STREAKS) if (b.cur < n && a.cur >= n) event({ t: 'streak', v: n, d: today() });
   }
-  function finished(book) { event({ t: 'book', v: bookName(book).slice(0, 120), d: today() }); }
+  function finished(book) {
+    const e = { t: 'book', v: bookName(book).slice(0, 120), d: today() };
+    if (shareTitle() && book.rate >= 1 && book.rate <= 5) e.r = Math.round(book.rate);
+    if (shareTitle() && book.fav) e.f = 1;
+    event(e);
+  }
 
   // ---------- the board and the feed (polled every 15 s while the screen is open)
   let pollT = null;
@@ -170,7 +184,8 @@ const Club = (() => {
     if (s.days && typeof s.days === 'object') for (const k of Object.keys(s.days)) if (isDay(k)) days[k] = num(s.days[k], 86400);
     return { total: num(s.total, 1e9), level: Math.min(num(s.level, 99), RG.LEVELS.length - 1), streak: num(s.streak, 1e5), best: num(s.best, 1e5),
       year: num(s.year, 1e4), finished: num(s.finished, 1e5), goal: num(s.goal, 1000), reading: typeof s.reading === 'string' ? s.reading.slice(0, 120) : null,
-      run: num(s.run, 1e14), at: typeof s.at === 'string' ? s.at : null, days, since: isDay(s.since) ? s.since : null };
+      run: num(s.run, 1e14), at: typeof s.at === 'string' ? s.at : null, days, since: isDay(s.since) ? s.since : null,
+      shelf: s.shelf === 1 ? 1 : s.shelf === 0 ? 0 : null };   // null: an older app that doesn't send its books yet
   }
   const isMe = id => !!(S.me && id === S.me.id);
   const statsOf = m => (isMe(m.id) ? myStats() : clean(m.stats));
@@ -223,7 +238,11 @@ const Club = (() => {
     if (!e || typeof e !== 'object') return null;
     const n = '<b>' + esc(m.name || GONE) + '</b>', v = Math.floor(Number(e.v)), ok = Number.isFinite(v) && v >= 0;
     switch (e.t) {
-      case 'book': return typeof e.v === 'string' ? [n + ' konča knjigo <i>' + esc(e.v.slice(0, 120)) + '</i>.', 'book'] : null;
+      case 'book': {
+        if (typeof e.v !== 'string') return null;
+        const r = Math.round(Number(e.r)), rated = r >= 1 && r <= 5;
+        return [n + ' konča knjigo <i>' + esc(e.v.slice(0, 120)) + '</i>.' + (rated || e.f ? '<span class="ev-rate">' + (rated ? starsView(r) : '') + (e.f ? favMark(true) : '') + '</span>' : ''), 'book'];
+      }
       case 'level': return ok && v < RG.LEVELS.length ? [n + ' napreduje na stopnjo <i>' + esc(RG.LEVELS[v][1]) + '</i>.', 'level', v] : null;
       case 'streak': return ok ? [n + ' bere že ' + v + ' ' + plural(v, DAYS) + ' zapored.', 'streak'] : null;
     }
@@ -253,7 +272,7 @@ const Club = (() => {
   // ---------- screens
   const form = (inner) => `<div class="fr-form">${inner}${ui.err ? `<p class="err">${esc(ui.err)}</p>` : ''}</div>`;
   const nameField = (v) => `<label for="fr-name">Tvoje ime (vidijo ga prijatelji)<input type="text" id="fr-name" maxlength="24" autocomplete="nickname" enterkeyhint="done" value="${esc(ui.nameVal != null ? ui.nameVal : v || '')}"></label>`;
-  const PRIVACY = 'Prijatelji vidijo tvoje ime, stopnjo, koliko bereš po dnevih, prebrane knjige in naslov knjige, ki jo bereš (naslov lahko skriješ).';
+  const PRIVACY = 'Prijatelji vidijo tvoje ime, stopnjo, koliko bereš po dnevih in tvoje knjige: kaj bereš zdaj, prebrane knjige z ocenami in najljubše (knjige lahko skriješ).';
   const peekName = () => (ui.peek && ui.peek.name) || '';
 
   function vOff() {
@@ -465,15 +484,49 @@ const Club = (() => {
         <div class="btns two"><button class="btn" data-act="fr-share">Pošlji povezavo</button><button class="btn" data-act="fr-copycode">Kopiraj kodo</button></div></div>`);
     setTimeout(() => { const i = $('#fr-code'); if (i && matchMedia('(hover:hover)').matches) i.focus(); }, 50);
   }
+  // ---------- books on a profile: what they read now, their favourites, what they have read with their ratings.
+  // A friend's shelf is fetched when their profile opens (the last copy shows at once); mine comes from this phone.
+  const shelves = {}, shelfFail = {}, shelfAll = {};
+  const SHOW = 10;
+  const monthOf = k => { try { return RG.keyDate(k).toLocaleDateString('sl-SI', { month: 'short', year: 'numeric' }); } catch (e) { return k; } };
+  const bookRow = (x, withDate) => `<li><span class="bl-main"><b>${esc(x.t)}</b>${x.a ? `<small>${esc(x.a)}</small>` : ''}</span><span class="bl-side">${starsView(x.r)}${favMark(x.f)}${withDate && x.d ? `<small>${esc(monthOf(x.d))}</small>` : ''}</span></li>`;
+  function shelfHtml(id) {
+    const m = members().find(x => x.id === id); if (!m) return '';
+    const mine = isMe(id), s = statsOf(m), who = esc(m.name);
+    const sh = mine ? RG.cleanShelf(RG.shelfOf(S.books, lastRead())) : shelves[id];
+    const wrap = inner => `<section class="fr-books" id="fr-shelf" data-id="${esc(id)}">${inner}</section>`;
+    const old = s.reading ? `<p class="fr-reading">Trenutno bere: <b>${esc(s.reading)}</b></p>` : '';
+    if (!mine && s.shelf === 0) return wrap(`<p class="hint">${who} svojih knjig ne deli.</p>`);
+    if (!mine && sh === undefined) return wrap(old + `<p class="hint">${shelfFail[id] ? 'Knjig ta hip ni mogoče naložiti.' : 'Nalagam knjige …'}</p>`);
+    if (!sh) return wrap(old + (s.shelf === null ? `<p class="hint">Ostale knjige bodo vidne, ko ${who} odpre posodobljeno aplikacijo.</p>` : ''));
+    const favs = sh.reading.concat(sh.read).filter(x => x.f), all = shelfAll[id] || sh.read.length <= SHOW + 2, read = all ? sh.read : sh.read.slice(0, SHOW);
+    const list = (title, n, items, withDate) => items.length ? `<h3>${title} <span>${n}</span></h3><ul class="blist">${items.map(x => bookRow(x, withDate)).join('')}</ul>` : '';
+    let out = list(mine ? 'Trenutno berem' : 'Trenutno bere', sh.reading.length, sh.reading, false)
+      + list('Najljubše', favs.length, favs, false)
+      + list('Prebrane', sh.n, read, true);
+    if (!all) out += `<button class="link" data-act="fr-shelf-all" data-id="${esc(id)}">Pokaži vse prebrane (${sh.read.length})</button>`;
+    else if (sh.n > sh.read.length) out += `<p class="hint">Vidnih je zadnjih ${sh.read.length} od ${sh.n} prebranih knjig.</p>`;
+    if (!sh.reading.length && !sh.read.length) out = `<p class="hint">Tu še ni knjig.</p>`;
+    if (mine && !shareTitle()) out += `<p class="hint">Prijatelji tvojih knjig ne vidijo. To spremeniš v nastavitvah.</p>`;
+    return wrap(out);
+  }
+  function paintShelf(id) { const box = document.getElementById('fr-shelf'); if (box && box.dataset.id === id) box.outerHTML = shelfHtml(id); }
+  async function loadShelf(id) {
+    if (DEMO || isMe(id) || !me() || !enabled()) return;
+    try { const r = await rpc('bm_shelf', Object.assign(auth(), { p_member: id })); shelves[id] = RG.cleanShelf(r && r.shelf); delete shelfFail[id]; }
+    catch (e) { if (e.code === 'gone') shelves[id] = null; else shelfFail[id] = true; }
+    paintShelf(id);
+  }
   function sheetMember(id) {
     const m = members().find(x => x.id === id); if (!m) return;
+    loadShelf(id);
     const s = statsOf(m), P = RG.weekPoints(RULE, s.days || {}, s.since || null, today()), L = RG.LEVELS[s.level || 0] ? s.level || 0 : 0, mine = isMe(id);
     const max = Math.max(30, ...P.days.map(d => d.min));
     const seenTxt = m.seen && !mine ? 'Nazadnje v aplikaciji ' + ago(m.seen) + '.' : '';
     const since = !mine && m.since ? 'Med prijatelji od ' + new Date(m.since).toLocaleDateString('sl-SI') + '.' : '';
     openSheet('', `<div class="detail fr-who">${KID(L, 104, false, true)}<div style="min-width:0; display:grid; gap:4px; justify-items:start"><h2>${esc(m.name)}${mine ? ' <small class="muted">(ti)</small>' : ''}</h2><p class="muted">${esc(RG.LEVELS[L][1])} · stopnja ${L + 1} od ${RG.LEVELS.length}</p>${live(s) ? '<span class="chip live"><i></i>bere prav zdaj</span>' : ''}</div></div>
-      ${s.reading ? `<p class="fr-reading">Trenutno bere: <b>${esc(s.reading)}</b></p>` : ''}
       <dl class="facts"><div><dt>Skupaj prebrano</dt><dd>${fmtHours(s.total || 0)}</dd></div><div><dt>Niz</dt><dd>${s.streak || 0} ${plural(s.streak || 0, DAYS)}</dd></div><div><dt>Prebrane knjige letos</dt><dd>${s.year || 0}</dd></div><div><dt>Najdaljši niz</dt><dd>${s.best || 0} ${plural(s.best || 0, DAYS)}</dd></div></dl>
+      ${shelfHtml(id)}
       <div><div class="head" style="margin-bottom:6px"><h2 style="font-size:1.05rem">Ta teden</h2><b class="num">${P.total < 0 ? "−" + Math.abs(P.total) : P.total} ${plural(Math.abs(P.total), PTS)}</b></div>
       <div class="fr-days">${P.days.map(d => `<div class="${d.kind}"><span>${wd(d.k)}</span><i style="--h:${d.min ? Math.max(6, Math.round(Math.min(1, d.min / max) * 100)) : 0}%"></i><b>${d.kind === 'future' || d.kind === 'before' ? '' : signed(d.pts)}</b><small>${d.min ? d.min + ' min' : d.kind === 'miss' ? '0 min' : ''}</small></div>`).join('')}</div>
       ${P.full ? `<p class="hint">Poln teden: ${signed(P.bonus)} točk.</p>` : ''}</div>
@@ -487,7 +540,7 @@ const Club = (() => {
         <button class="link" data-act="fr-newcode" style="justify-self:start; padding-left:0">Nova koda</button><p class="hint" id="fr-newcode-note" hidden style="margin-top:0">Tapni še enkrat. Stara koda in povezava ne bosta več delovali, prijatelji ostanejo.</p></div>
       <div class="fr-set"><button class="btn" data-act="fr-addsheet">${ICF.add}Dodaj prijatelja</button></div>
       <div class="fr-set"><label for="fr-myname">Tvoje ime<input type="text" id="fr-myname" maxlength="24" value="${esc(S.me.name)}"></label><button class="btn" data-act="fr-myname">Shrani ime</button>
-        <button class="switch" role="switch" aria-checked="${shareTitle()}" data-act="fr-sharetitle"><span>Prijatelji vidijo naslov knjige, ki jo bereš</span><i></i></button></div>
+        <button class="switch" role="switch" aria-checked="${shareTitle()}" data-act="fr-sharetitle"><span>Prijatelji vidijo moje knjige, ocene in najljubše</span><i></i></button></div>
       <div class="fr-set"><h3>Točke</h3><p class="hint" style="margin-top:0">${esc(RG.RULES[RULE].note)} ${ruleLines(RULE).map(l => esc(l[0]) + ' ' + esc(l[1])).join(' · ')}.</p></div>`);
   }
   function sheetTransfer() {
@@ -550,6 +603,7 @@ const Club = (() => {
       case 'fr-transfer': sheetTransfer(); break;
       case 'fr-restore-open': sheetRestore(); break;
       case 'fr-sharetitle': S.shareTitle = !shareTitle(); save(); el.setAttribute('aria-checked', String(shareTitle())); break;
+      case 'fr-shelf-all': shelfAll[id] = true; paintShelf(id); break;
       case 'fr-myname': {
         const n = val('fr-myname'); if (!n) return;
         try { await rename(n); closeSheet(); await refresh(true); toast('Shranjeno.'); } catch (e) { toast(errText(e)); }
@@ -624,7 +678,7 @@ const Club = (() => {
     const t = today(), past = (n, mins) => Object.fromEntries(mins.map((m, i) => [RG.addDays(t, i - mins.length + 1), m * 60]).filter(x => x[1] > 0));
     S.me = { id: 'demojan000000000', key: 'x'.repeat(32), name: 'Jan', since: RG.addDays(t, -60) };
     const now = Date.now(), iso = ms => new Date(now - ms).toISOString();
-    const fr = (id, name, level, total, mins, extra) => ({ id, name, since: iso(30 * 864e5), seen: iso(3600e3), stats: Object.assign({ v: 1, at: iso(600e3), total, level, streak: 9, best: 21, finished: 8, year: 6, reading: null, run: 0, days: past(21, mins), since: RG.addDays(t, -90) }, extra) });
+    const fr = (id, name, level, total, mins, extra) => ({ id, name, since: iso(30 * 864e5), seen: iso(3600e3), stats: Object.assign({ v: 1, at: iso(600e3), total, level, streak: 9, best: 21, finished: 8, year: 6, reading: null, run: 0, days: past(21, mins), since: RG.addDays(t, -90), shelf: 1 }, extra) });
     const list = [
       { id: S.me.id, name: 'Jan', since: iso(40 * 864e5), seen: iso(0), stats: {} },
       fr('demoana00000000a', 'Ana', 12, 205 * 3600, [30, 45, 25, 60, 20, 35, 40, 50, 30, 25, 45, 70, 30, 40, 25, 35, 30, 45, 25, 60, 22], { reading: 'Mali princ', streak: 34, best: 34, run: now - 1100e3, at: iso(60e3) }),
@@ -643,6 +697,16 @@ const Club = (() => {
       { id: 8, who: M, owner: J, name: 'Marko', kind: 'msg', body: 'Kmalu te ujamem!', at: iso(2 * 3600e3), bravo: [], re: 7 },
       { id: 9, who: M, owner: M, name: 'Marko', kind: 'msg', body: 'Ta teden vas ujamem. Nocoj berem do polnoči.', at: iso(1500e3), bravo: [] },
     ] };
+    // their bookshelves (what a friend's phone would send)
+    const bk = (t, a, r, f, ago) => ({ t, a, r, f, d: ago == null ? undefined : RG.addDays(t0, -ago) }), t0 = t;
+    const anaRead = [['Alamut', 'Vladimir Bartol', 5, 1], ['Mož po imenu Ove', 'Fredrik Backman', 5], ['Čefurji raus!', 'Goran Vojnović', 4], ['Atomske navade', 'James Clear', 4],
+      ['1984', 'George Orwell', 5, 1], ['Hiša Marije Pomočnice', 'Ivan Cankar', 4], ['Veliki Gatsby', 'F. Scott Fitzgerald', 3], ['Sapiens', 'Yuval Noah Harari', 4],
+      ['Martin Krpan', 'Fran Levstik', 4], ['Jamica', 'Valentina Plaskan', 5], ['Ime rože', 'Umberto Eco', 3], ['Pod svobodnim soncem', 'Fran Saleški Finžgar', 4],
+      ['Dekameron', 'Giovanni Boccaccio', 2], ['Na klancu', 'Ivan Cankar', 4]].map((x, i) => bk(x[0], x[1], x[2], x[3], 9 + i * 23));
+    shelves[A] = RG.cleanShelf({ reading: [bk('Mali princ', 'Antoine de Saint-Exupéry', 0, 0), bk('Kafka na obrežju', 'Haruki Murakami', 0, 1)], read: anaRead, n: anaRead.length });
+    shelves[M] = RG.cleanShelf({ reading: [bk('Sapiens', 'Yuval Noah Harari')], read: [bk('Atomske navade', 'James Clear', 4, 0, 30), bk('Hobit', 'J. R. R. Tolkien', 5, 1, 80)], n: 2 });
+    shelves[P] = RG.cleanShelf({ reading: [bk('Igra prestolov', 'George R. R. Martin')], read: [bk('Alamut', 'Vladimir Bartol', 5, 1, 1)], n: 1 });
+    cache.feed[3].body = '{"t":"book","v":"Alamut","r":5,"f":1}';
     if (/welcome/.test(hash)) { S.me = null; cache = EMPTY(); }
     if (/invite/.test(hash)) { S.me = null; cache = EMPTY(); ui.invite = 'R4T8WN3K'; ui.peek = { name: 'Ana' }; }
     if (/alone/.test(hash)) { cache.board.members = list.slice(0, 1); cache.info.friends = 0; cache.feed = cache.feed.filter(m => m.owner === J && m.who === J); }

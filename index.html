@@ -28,7 +28,7 @@
   /* meanings: accent = what you press, good = goal reached, mark = bookmarks and records, under = minutes under the goal */
   --accent:#51664A; --accent-soft:rgba(81,102,74,.09); --on-accent:#FFFFFF;
   --good:#3B6747; --good-soft:rgba(59,103,71,.11); --on-good:#FFFFFF;
-  --mark:#984835; --mark-soft:rgba(152,72,53,.09); --under:#8A8DA4; --danger:#984835;
+  --mark:#984835; --mark-soft:rgba(152,72,53,.09); --under:#8A8DA4; --danger:#984835; --rate:#9A6410;
   /* the level illustration: the reader growing up, the cat and the room (kid.js turns each --il-* into a fill and a stroke class) */
   --il-wall:#E3E1D6; --il-wall-shade:#D6D3C6; --il-floor:#CFC8B5; --il-floor-shade:#C0B8A3; --il-rug:#C6CBBB; --il-rug-2:#AEB5A4;
   --il-skin:#EDBE96; --il-skin-shade:#D39A72; --il-blush:#E58C7A; --il-lip:#A65A48; --il-ink:#2B2522;
@@ -510,6 +510,50 @@ main{max-width:560px; margin:0 auto; padding:calc(var(--top) + 28px) max(20px, e
 .fr-days b{font:var(--num-w) .9rem var(--num); color:var(--fg)}
 .fr-days .miss b{color:var(--mark)}
 .fr-days .future,.fr-days .before{opacity:.45}
+/* ratings (stars, finished books) and favourites (heart); --rate is the stars' amber */
+.stars{display:inline-flex; gap:1px; vertical-align:middle; color:var(--rate)}
+.stars i{display:block; width:13px; height:13px; line-height:0; color:var(--surface2)}
+.stars i.on{color:var(--rate)}
+.stars svg,.favmark svg{width:100%; height:100%; fill:currentColor}
+.favmark{display:inline-block; width:14px; height:14px; color:var(--mark); vertical-align:-1px; margin-left:6px; line-height:0}
+.shelf .stars{margin-top:-2px}
+.shelf-fav{position:absolute; top:8px; left:8px; display:grid; place-items:center; width:26px; height:26px; border-radius:50%; background:var(--surface); box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.shelf-fav .favmark{margin:0}
+.rate{display:flex; gap:0}
+.rate button{display:grid; place-items:center; width:44px; height:44px; background:none; border:0; padding:0; border-radius:8px; color:var(--surface2); transition:transform .15s var(--ease)}
+.rate button svg{width:32px; height:32px; fill:currentColor}
+.rate button.on{color:var(--rate)}
+.rate button:active{transform:scale(.9)}
+.favbtn{display:inline-flex; align-items:center; gap:8px; min-height:44px; background:none; border:1px solid var(--line); border-radius:var(--r-pill); padding:6px 16px 6px 12px; font-weight:650; color:var(--fg)}
+.favbtn svg{width:20px; height:20px; fill:none; stroke:var(--mark); stroke-width:2}
+.favbtn.on{background:var(--mark-soft); border-color:transparent; color:var(--mark)}
+.favbtn.on svg{fill:var(--mark)}
+.myrate{display:grid; gap:10px; justify-items:start}
+.myrate-row{display:flex; align-items:center; flex-wrap:wrap; gap:4px 10px}
+.myrate-row > span{font-size:.85rem; color:var(--muted); font-weight:600}
+.finrate{display:grid; gap:10px}
+.finrate h3{font-size:1rem}
+.finrate-pick{display:flex; flex-wrap:wrap; align-items:center; gap:10px 16px}
+.finrate .hint{margin-top:0}
+.party-rate{display:flex; align-items:center; gap:10px}
+.party .party-rate .stars i{width:22px; height:22px}
+.party .party-rate .favmark{width:22px; height:22px; margin:0}
+.ev-rate{display:inline-flex; align-items:center; gap:4px; margin-left:6px; vertical-align:-2px}
+.ev-rate .favmark{margin-left:2px}
+/* a profile's books: reading now, favourites, read with ratings */
+.fr-books{display:grid; gap:8px}
+.fr-books h3{display:flex; align-items:baseline; gap:8px; font-family:var(--display); font-weight:var(--display-w); font-size:1.05rem; margin-top:6px}
+.fr-books h3 span{font-family:var(--font); font-weight:500; font-size:.85rem; color:var(--muted)}
+.fr-books .hint{margin-top:0}
+.fr-books .link{justify-self:start; padding-left:0}
+.blist{list-style:none; margin:0; padding:0; border-top:1px solid var(--line)}
+.blist li{display:flex; justify-content:space-between; align-items:center; gap:12px; padding:9px 0; border-bottom:1px solid var(--line)}
+.bl-main{display:grid; gap:1px; min-width:0}
+.bl-main b{font-weight:650; overflow-wrap:anywhere}
+.bl-main small{font-size:.8rem; color:var(--muted); overflow-wrap:anywhere}
+.bl-side{display:flex; flex-wrap:wrap; justify-content:flex-end; align-items:center; gap:3px 6px; flex:none; max-width:112px}
+.bl-side small{flex-basis:100%; text-align:right; font-size:.75rem; color:var(--muted); white-space:nowrap}
+.bl-side .favmark{margin:0}
 @keyframes livepulse{0%,100%{opacity:1} 50%{opacity:.35}}
 @media (hover:hover){.fr-row:hover .fr-name b{text-decoration:underline; text-underline-offset:3px} .bravo:hover,.re-btn:hover{color:var(--fg)}}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important; transition:none!important} .morph .old,.morph .burst{display:none}}
