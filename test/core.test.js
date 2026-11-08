@@ -99,30 +99,34 @@ assert.deepStrictEqual([P.days[0].k, P.days[6].k, P.total], ['2026-10-26', '2026
 // unknown rules fall back to A; no data at all is all misses
 assert.strictEqual(RG.weekPoints('Z', {}, null, '2026-11-03').total, -5);
 
-// the bookshelf friends see: reading (last read first), read (newest first) with ratings and favourites; aside books stay private
+// scores: 1 to 10; the first days' 1-to-5 stars count double; a new score replaces them; the comment is cut at 200
+assert.deepStrictEqual([RG.scoreOf({ score: 7 }), RG.scoreOf({ rate: 4 }), RG.scoreOf({ score: 9, rate: 2 }), RG.scoreOf({ score: 11 }), RG.scoreOf({}), RG.scoreOf(null)], [7, 8, 9, 0, 0, 0]);
+assert.deepStrictEqual([RG.noteOf({ note: '  Lepa.  ' }), RG.noteOf({ note: 5 }), RG.noteOf({ note: 'x'.repeat(300) }).length], ['Lepa.', '', 200]);
+
+// the bookshelf friends see: reading (last read first), read (newest first) with score, comment and favourite; aside books stay private
 const bk = (id, status, extra) => Object.assign({ id, title: 'Knjiga ' + id, author: '', status, added: '2026-01-01', done: null }, extra);
 let sh = RG.shelfOf([
   bk('a', 'reading'), bk('b', 'reading', { fav: true, author: 'Bartol' }),
-  bk('c', 'finished', { done: '2026-05-01', rate: 4 }), bk('d', 'finished', { done: '2026-09-01', rate: 5, fav: true }),
-  bk('e', 'aside', { fav: true }), bk('f', 'reading', { rate: 3, title: '' }),
+  bk('c', 'finished', { done: '2026-05-01', rate: 4 }), bk('d', 'finished', { done: '2026-09-01', score: 10, note: ' Najboljša! ', fav: true }),
+  bk('e', 'aside', { fav: true }), bk('f', 'reading', { score: 3, note: 'še ne', title: '' }),
 ], { a: '2026-11-01', b: '2026-11-07' });
 assert.deepStrictEqual(sh.reading.map(x => x.t), ['Knjiga b', 'Knjiga a', 'Knjiga brez naslova']);
 assert.deepStrictEqual(sh.reading[0], { t: 'Knjiga b', a: 'Bartol', f: 1 });
-assert.strictEqual(sh.reading[2].r, undefined);   // a rating counts only for a finished book
-assert.deepStrictEqual(sh.read, [{ t: 'Knjiga d', r: 5, f: 1, d: '2026-09-01' }, { t: 'Knjiga c', r: 4, d: '2026-05-01' }]);
+assert.deepStrictEqual([sh.reading[2].s, sh.reading[2].c], [undefined, undefined]);   // only a finished book is rated
+assert.deepStrictEqual(sh.read, [{ t: 'Knjiga d', s: 10, c: 'Najboljša!', f: 1, d: '2026-09-01' }, { t: 'Knjiga c', s: 8, d: '2026-05-01' }]);
 assert.strictEqual(sh.n, 2);
 // a huge list loses its oldest books first, but keeps the favourites
-const many = Array.from({ length: 900 }, (_, i) => bk('m' + i, 'finished', { title: 'Dolg naslov knjige številka ' + i + ' '.repeat(5) + 'x'.repeat(60), author: 'Avtor '.repeat(12), done: RG.addDays('2020-01-01', i), rate: 3, fav: i === 0 }));
+const many = Array.from({ length: 900 }, (_, i) => bk('m' + i, 'finished', { title: 'Dolg naslov knjige številka ' + i + ' '.repeat(5) + 'x'.repeat(60), author: 'Avtor '.repeat(12), done: RG.addDays('2020-01-01', i), score: 6, note: 'Komentar '.repeat(30), fav: i === 0 }));
 sh = RG.shelfOf(many, {});
 assert.ok(JSON.stringify(sh).length < 40000 && sh.read.length < 900 && sh.n === 900);
 assert.strictEqual(sh.read[0].d, RG.addDays('2020-01-01', 899));   // the newest stays
 assert.ok(sh.read.some(x => x.f));                                  // and the oldest, a favourite, too
-// cleaning what comes from another phone
+// cleaning what comes from another phone (an older phone sends r, 1 to 5)
 assert.strictEqual(RG.cleanShelf(null), null);
 assert.strictEqual(RG.cleanShelf([1]), null);
-const cl = RG.cleanShelf({ reading: [{ t: '  Alamut ', a: 7 }, { t: '' }, 'x'], read: [{ t: 'B'.repeat(300), r: 9, f: 'yes', d: 'včeraj' }, { t: 'C', r: 2.6, d: '2026-01-02' }], n: -4 });
-assert.deepStrictEqual(cl.reading, [{ t: 'Alamut', a: '', r: 0, f: false, d: null }]);
-assert.deepStrictEqual([cl.read[0].t.length, cl.read[0].r, cl.read[0].f, cl.read[0].d], [100, 0, true, null]);
-assert.deepStrictEqual([cl.read[1].r, cl.read[1].d, cl.n], [3, '2026-01-02', 2]);
+const cl = RG.cleanShelf({ reading: [{ t: '  Alamut ', a: 7 }, { t: '' }, 'x'], read: [{ t: 'B'.repeat(300), s: 19, c: 'y'.repeat(300), f: 'yes', d: 'včeraj' }, { t: 'C', s: 6.6, c: 7, d: '2026-01-02' }, { t: 'D', r: 3 }], n: -4 });
+assert.deepStrictEqual(cl.reading, [{ t: 'Alamut', a: '', s: 0, c: '', f: false, d: null }]);
+assert.deepStrictEqual([cl.read[0].t.length, cl.read[0].s, cl.read[0].c.length, cl.read[0].f, cl.read[0].d], [100, 0, 200, true, null]);
+assert.deepStrictEqual([cl.read[1].s, cl.read[1].c, cl.read[1].d, cl.read[2].s, cl.n], [7, '', '2026-01-02', 6, 3]);
 
 console.log('core ok');

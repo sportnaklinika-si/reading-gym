@@ -373,20 +373,21 @@ function dayDot(k, s, isToday) {
   return `<div class="wd${isToday ? ' is-today' : ''}" role="img" aria-label="${esc(longDay(k) + ': ' + (STATUS[s] || 'še brez cilja'))}">${slot}<span>${wd(k)}</span></div>`;
 }
 const PLAY = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5.5 3.8v12.4c0 .7.8 1.1 1.4.7l9.6-6.2c.6-.4.6-1.2 0-1.5L6.9 3.1c-.6-.4-1.4 0-1.4.7z" fill="currentColor"/></svg>';
-// ratings (1 to 5 stars, finished books) and favourites (any book); friends see both on the profile (club.js)
+// a finished book's score (1 to 10) and short comment, and favourites (any book); friends see them on the profile (club.js)
 const STAR = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1.8l2.4 5.3 5.8.6-4.3 3.9 1.2 5.7L10 14.4l-5.1 2.9 1.2-5.7L1.8 7.7l5.8-.6z"/></svg>';
 const HEART = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>';
-const STARS = ['zvezdica', 'zvezdici', 'zvezdice', 'zvezdic'];
-const starsView = r => r >= 1 ? `<span class="stars" role="img" aria-label="Ocena ${r} od 5">${[1, 2, 3, 4, 5].map(i => `<i${i <= r ? ' class="on"' : ''}>${STAR}</i>`).join('')}</span>` : '';
+const scoreView = s => s >= 1 ? `<span class="score" role="img" aria-label="Ocena ${s} od 10">${STAR}<b>${s}</b><small>/10</small></span>` : '';
+const noteView = c => c ? `<span class="note">„${esc(c)}“</span>` : '';
 const favMark = f => f ? `<span class="favmark" role="img" aria-label="Najljubša">${HEART}</span>` : '';
-// to set a rating: five buttons, a tap on the current one clears it
-const rateInput = (r, act, id) => `<div class="rate" role="group" aria-label="Ocena">${[1, 2, 3, 4, 5].map(i => `<button type="button"${i <= r ? ' class="on"' : ''} data-act="${act}" data-n="${i}"${id ? ` data-id="${id}"` : ''} aria-pressed="${i === r}" aria-label="${i} ${plural(i, STARS)}">${STAR}</button>`).join('')}</div>`;
+// to set a score: ten buttons in two rows, a tap on the chosen one clears it
+const scoreInput = (s, act, id) => `<div class="score-pick" role="group" aria-label="Ocena od 1 do 10">${Array.from({ length: 10 }, (_, k) => k + 1).map(i => `<button type="button"${i === s ? ' class="on"' : ''} data-act="${act}" data-n="${i}"${id ? ` data-id="${id}"` : ''} aria-pressed="${i === s}">${i}</button>`).join('')}</div>`;
+const noteInput = (v, fid, id) => `<label class="note-in" for="${fid}">Kratek komentar (neobvezno)<textarea id="${fid}"${id ? ` data-id="${id}"` : ''} maxlength="${RG.NOTE_MAX}" rows="2" enterkeyhint="done" placeholder="Kaj ti je bilo všeč, kaj ne?">${esc(v)}</textarea></label>`;
 const favInput = (f, act, id) => `<button type="button" class="favbtn${f ? ' on' : ''}" data-act="${act}"${id ? ` data-id="${id}"` : ''} aria-pressed="${!!f}">${HEART}<span>${f ? 'Med najljubšimi' : 'Dodaj med najljubše'}</span></button>`;
 function bookCard(b, t, play) {
   const sub = b.status === 'finished' ? 'Prebrana ' + fmtDay(b.done) + (t ? ' · ' + fmtMin(t.sec) : '') : t ? fmtMin(t.sec) + ' branja' : 'Še nezačeta';
   return `<div class="book" data-act="open" data-id="${b.id}" role="button" tabindex="0">${cover(b, 48)}<div style="min-width:0; display:grid; gap:2px"><h3>${esc(bookName(b))}${favMark(b.fav)}</h3>${b.author ? `<p>${esc(b.author)}</p>` : ''}<p class="t">${sub}</p></div>${play ? `<button class="play" data-act="start" data-id="${b.id}" aria-label="Začni brati: ${esc(bookName(b))}">${PLAY}</button>` : ''}</div>`;
 }
-const shelfItem = (b, t) => `<button class="shelf" data-act="open" data-id="${b.id}">${cover(b, 'fill')}${b.done ? `<span class="done-stamp" aria-hidden="true">PREBRANO<br>${stampDate(b.done)}</span>` : ''}${b.fav ? `<span class="shelf-fav">${favMark(true)}</span>` : ''}<b>${esc(bookName(b))}</b>${b.status === 'finished' ? starsView(b.rate) : ''}<small>${b.done ? fmtDay(b.done) : ''}${t ? '<br>' + fmtMin(t.sec) : ''}</small></button>`;
+const shelfItem = (b, t) => `<button class="shelf" data-act="open" data-id="${b.id}">${cover(b, 'fill')}${b.done ? `<span class="done-stamp" aria-hidden="true">PREBRANO<br>${stampDate(b.done)}</span>` : ''}${b.fav ? `<span class="shelf-fav">${favMark(true)}</span>` : ''}<b>${esc(bookName(b))}</b>${b.status === 'finished' ? scoreView(RG.scoreOf(b)) : ''}<small>${b.done ? fmtDay(b.done) : ''}${t ? '<br>' + fmtMin(t.sec) : ''}</small></button>`;
 
 // ---------- screens
 const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
@@ -569,40 +570,51 @@ function sheetDetail(id) {
     aside: `<div class="btns two"><button class="btn primary" data-act="reread" data-id="${id}">Nazaj k branju</button><button class="btn" data-act="finishbook" data-id="${id}">Zaključi knjigo</button></div>`,
   }[b.status];
   openSheet('', `<div class="detail">${cover(b, 84)}<div style="min-width:0; display:grid; gap:6px; justify-items:start"><h2>${esc(bookName(b))}</h2>${b.author ? `<p class="muted">${esc(b.author)}</p>` : ''}<span class="chip st">${{ reading: 'Trenutno berem', finished: 'Prebrana', aside: 'Odložena' }[b.status]}</span></div></div>
-    <div class="myrate">${b.status === 'finished' ? `<div class="myrate-row"><span>Tvoja ocena</span>${rateInput(b.rate || 0, 'rate', id)}</div>` : ''}${favInput(b.fav, 'fav', id)}</div>
+    <div class="myrate">${b.status === 'finished' ? `<h3>Tvoja ocena <span>od 1 do 10</span></h3>${scoreInput(RG.scoreOf(b), 'rate', id)}${noteInput(RG.noteOf(b), 'd-note', id)}` : ''}${favInput(b.fav, 'fav', id)}</div>
     <dl class="facts">${facts.map(f => `<div><dt>${f[0]}</dt><dd>${esc(f[1])}</dd></div>`).join('')}</dl>
     <div class="btns">${acts}<button class="btn ghost" data-act="edit" data-id="${id}">Uredi naslov, avtorja ali platnico</button></div>
     <div class="danger-zone"><button class="del" data-act="delete" data-id="${id}">Izbriši knjigo</button><p class="err" id="del-note" hidden style="text-align:center">Tapni še enkrat, da izbrišeš knjigo${t ? ' in ' + fmtMin(t.sec) + ' branja' : ''}.</p></div>`);
 }
-// a rating or favourite changed in the book's sheet: save, then draw the sheet again with the focus where it was
+// a score, comment or favourite changed in the book's sheet: save; a new score or heart draws the sheet again, focus kept
 function setMine(id, change, focusSel) {
   const b = bookById(id); if (!b) return;
-  change(b); if (!b.rate) delete b.rate; if (!b.fav) delete b.fav;
-  ownBook(b); save(); render(); sheetDetail(id);
+  if (b.rate && !b.score) b.score = RG.scoreOf(b);   // the first days' stars become a score (stars x 2)
+  delete b.rate;
+  change(b); if (!b.score) delete b.score; if (!b.note) delete b.note; if (!b.fav) delete b.fav;
+  ownBook(b); save(); render();
+  if (!focusSel) return;
+  sheetDetail(id);
   const f = $('#sheet ' + focusSel); if (f) f.focus();
 }
-// finishing a book: first the rating and favourite (both optional), then the celebration
+const keepNote = (id, v) => { const b = bookById(id), c = String(v || '').trim().slice(0, RG.NOTE_MAX); if (b && c !== RG.noteOf(b)) setMine(id, x => { x.note = c; }); };
+// finishing a book: first the score, a short comment and the heart (all optional), then the celebration
 let pick = null;
-const pickHtml = () => rateInput(pick.r, 'pick-rate') + favInput(pick.f, 'pick-fav');
+const pickHtml = () => scoreInput(pick.s, 'pick-rate') + favInput(pick.f, 'pick-fav');
 function sheetFinish(id) {
   const b = bookById(id); if (!b) return;
-  pick = { id, r: b.rate || 0, f: !!b.fav };
+  pick = { id, s: RG.scoreOf(b), f: !!b.fav };
   openSheet('Zaključi knjigo', `<div class="detail">${cover(b, 64)}<div style="min-width:0; display:grid; gap:4px"><h2>${esc(bookName(b))}</h2>${b.author ? `<p class="muted">${esc(b.author)}</p>` : ''}</div></div>
-    <div class="finrate"><h3>Kako ti je bila všeč?</h3><div class="finrate-pick" id="pick">${pickHtml()}</div><p class="hint">Ni obvezno. Oceno in najljubše lahko spremeniš kasneje v knjigi.</p></div>
+    <div class="finrate"><h3>Kako ti je bila všeč? <span>Ocena od 1 do 10</span></h3><div class="finrate-pick" id="pick">${pickHtml()}</div>
+      ${noteInput(RG.noteOf(b), 'fin-note')}<p class="hint">Vse je neobvezno in se da kasneje spremeniti v knjigi.</p></div>
     <button class="btn primary" data-act="finish-yes" data-id="${id}">Zaključi knjigo</button>`);
 }
 function repaintPick(focusSel) { $('#pick').innerHTML = pickHtml(); const f = $('#pick ' + focusSel); if (f) f.focus(); }
 function setStatus(id, status, pk) {
   const b = bookById(id); if (!b) return;
   b.status = status; b.done = status === 'finished' ? today() : null;
-  if (status === 'finished' && pk) { if (pk.r) b.rate = pk.r; else delete b.rate; if (pk.f) b.fav = true; else delete b.fav; }
+  if (status === 'finished' && pk) {
+    delete b.rate; if (pk.s) b.score = pk.s; else delete b.score;
+    if (pk.c) b.note = pk.c; else delete b.note;
+    if (pk.f) b.fav = true; else delete b.fav;
+  }
   ownBook(b);
   save(); closeSheet(); render();
   if (status === 'finished') {
     Club.finished(b);
     const y = String(new Date().getFullYear()), n = S.books.filter(x => x.status === 'finished' && (x.done || '').startsWith(y)).length, t = RG.bookTotals(S.sessions)[id];
+    const s = RG.scoreOf(b), c = RG.noteOf(b);
     vibrate([80, 60, 160]);
-    party(`<div class="hero">${cover(b, 124)}<span class="big-stamp">PREBRANO<small>${esc(fmtDay(b.done))}</small></span>${sparks()}</div><h2>${esc(bookName(b))}</h2>${b.rate || b.fav ? `<p class="party-rate">${starsView(b.rate)}${favMark(b.fav)}</p>` : ''}<p>To je ${n}. prebrana knjiga v letu ${y}.${t ? ' ' + fmtMin(t.sec) + ' branja.' : ''}</p>`);
+    party(`<div class="hero">${cover(b, 124)}<span class="big-stamp">PREBRANO<small>${esc(fmtDay(b.done))}</small></span>${sparks()}</div><h2>${esc(bookName(b))}</h2>${s || b.fav ? `<p class="party-rate">${scoreView(s)}${favMark(b.fav)}</p>` : ''}${c ? `<p class="party-note">${noteView(c)}</p>` : ''}<p>To je ${n}. prebrana knjiga v letu ${y}.${t ? ' ' + fmtMin(t.sec) + ' branja.' : ''}</p>`);
   }
 }
 function deleteBook(id, btn) {
@@ -700,10 +712,10 @@ document.addEventListener('click', e => {
     case 'manual': sheetManual(id); break;
     case 'savemanual': saveManual(id); break;
     case 'finishbook': sheetFinish(id); break;
-    case 'finish-yes': if (pick && pick.id === id) { const pk = pick; pick = null; setStatus(id, 'finished', pk); } break;
-    case 'pick-rate': if (pick) { const n = Number(el.dataset.n); pick.r = pick.r === n ? 0 : n; repaintPick(`[data-n="${n}"]`); } break;
+    case 'finish-yes': if (pick && pick.id === id) { const pk = pick, ta = $('#fin-note'); pk.c = ta ? ta.value.trim().slice(0, RG.NOTE_MAX) : ''; pick = null; setStatus(id, 'finished', pk); } break;
+    case 'pick-rate': if (pick) { const n = Number(el.dataset.n); pick.s = pick.s === n ? 0 : n; repaintPick(`[data-n="${n}"]`); } break;
     case 'pick-fav': if (pick) { pick.f = !pick.f; repaintPick('.favbtn'); } break;
-    case 'rate': { const n = Number(el.dataset.n); setMine(id, b => { b.rate = b.rate === n ? 0 : n; }, `[data-act="rate"][data-n="${n}"]`); break; }
+    case 'rate': { const n = Number(el.dataset.n); setMine(id, b => { b.score = b.score === n ? 0 : n; }, `[data-act="rate"][data-n="${n}"]`); break; }
     case 'fav': setMine(id, b => { b.fav = !b.fav; }, '.favbtn'); break;
     case 'aside': setStatus(id, 'aside'); break;
     case 'reread': setStatus(id, 'reading'); break;
@@ -722,7 +734,9 @@ document.addEventListener('click', e => {
   }
   if (el.dataset.act === 'tab') { Club.poll(view === 'friends'); if (view === 'friends') Club.wake(); }
 });
-document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches('[role="button"][data-act]')) e.target.click(); });
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches('[role="button"][data-act]')) e.target.click();
+  if (e.key === 'Enter' && !e.shiftKey && e.target.matches('.note-in textarea')) { e.preventDefault(); e.target.blur(); }   // a short comment: Enter is done
+});
 $('#scrim').addEventListener('click', e => { if (e.target.id === 'scrim') closeSheet(); });
 document.addEventListener('change', async e => {
   if (e.target.id === 'f-photo' && e.target.files[0]) {
@@ -730,6 +744,7 @@ document.addEventListener('change', async e => {
     catch (err) { toast('Te fotografije ni bilo mogoče prebrati. Poskusi z drugo.'); }
   }
   if (e.target.id === 'f-import' && e.target.files[0]) readImport(e.target.files[0]);
+  if (e.target.id === 'd-note') { const before = RG.noteOf(bookById(e.target.dataset.id)); keepNote(e.target.dataset.id, e.target.value); if (RG.noteOf(bookById(e.target.dataset.id)) !== before) toast('Komentar je shranjen.'); }
 });
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; render(); });
 window.addEventListener('appinstalled', () => { installEvt = null; render(); });
@@ -738,9 +753,9 @@ function demoState() {
   const t = today(), books = [
     { id: 'd1', title: 'Alamut', author: 'Vladimir Bartol', added: RG.addDays(t, -40), status: 'reading', done: null, cover: false },
     { id: 'd2', title: 'Na klancu', author: 'Ivan Cankar', added: RG.addDays(t, -20), status: 'reading', done: null, cover: false },
-    { id: 'd3', title: 'Martin Krpan', author: 'Fran Levstik', added: RG.addDays(t, -60), status: 'finished', done: RG.addDays(t, -12), cover: false, rate: 4 },
-    { id: 'd4', title: 'Pod svobodnim soncem', author: 'Fran Saleški Finžgar', added: RG.addDays(t, -150), status: 'finished', done: RG.addDays(t, -70), cover: false, rate: 5, fav: true },
-    { id: 'd5', title: 'Hiša Marije Pomočnice', author: 'Ivan Cankar', added: RG.addDays(t, -200), status: 'finished', done: RG.addDays(t, -120), cover: false, rate: 3 },
+    { id: 'd3', title: 'Martin Krpan', author: 'Fran Levstik', added: RG.addDays(t, -60), status: 'finished', done: RG.addDays(t, -12), cover: false, score: 8, note: 'Kratka, duhovita in še vedno smešna.' },
+    { id: 'd4', title: 'Pod svobodnim soncem', author: 'Fran Saleški Finžgar', added: RG.addDays(t, -150), status: 'finished', done: RG.addDays(t, -70), cover: false, score: 10, note: 'Najlepša slovenska zgodba. Berem jo vsakih nekaj let.', fav: true },
+    { id: 'd5', title: 'Hiša Marije Pomočnice', author: 'Ivan Cankar', added: RG.addDays(t, -200), status: 'finished', done: RG.addDays(t, -120), cover: false, score: 6 },
   ];
   const sessions = [];
   for (let i = 45; i >= 0; i--) {
@@ -767,7 +782,7 @@ function demoState() {
   if (DEMO && HASH === '#demo-add') sheetBook();
   if (DEMO && HASH === '#demo-level') levelUp(6);
   if (DEMO && HASH === '#demo-finished') setStatus('d1', 'finished');
-  if (DEMO && HASH === '#demo-finish') { sheetFinish('d1'); pick.r = 4; repaintPick('x'); }
+  if (DEMO && HASH === '#demo-finish') { sheetFinish('d1'); pick.s = 9; repaintPick('x'); $('#fin-note').value = 'Napeto do zadnje strani, konec me je presenetil.'; }
   if (DEMO && HASH === '#demo-detail-done') sheetDetail('d4');
   if (DEMO && HASH === '#demo-levels') $('#view').innerHTML = `<div class="roster" style="grid-template-columns:repeat(3,minmax(0,1fr))">${RG.LEVELS.map((x, i) => `<div class="cell">${KID(i, 112)}<b>${esc(x[1])}</b><small>${x[0]} h</small></div>`).join('')}</div><div class="roster" style="grid-template-columns:repeat(3,minmax(0,1fr))">${[3, 9, 16].map(i => `<div class="cell locked">${KID(i, 112, true)}<b>${esc(RG.LEVELS[i][1])}</b><small>zaklenjeno</small></div>`).join('')}</div>`;
   // last month's numbers and calendar (a full month of example data)

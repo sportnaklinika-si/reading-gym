@@ -141,9 +141,18 @@
     return { total, days: out, read, minutes, full, bonus: full ? R.week : 0 };
   }
 
+  // ---------- ratings: a finished book gets a score from 1 to 10 and a short comment (both optional). Books rated in the
+  // first days (8. 11. 2026) have `rate`, 1 to 5 stars: they count double, until the score is set again.
+  const NOTE_MAX = 200;
+  const scoreOf = b => {
+    const s = Math.round(Number(b && b.score)); if (s >= 1 && s <= 10) return s;
+    const r = Math.round(Number(b && b.rate)); return r >= 1 && r <= 5 ? r * 2 : 0;
+  };
+  const noteOf = b => (b && typeof b.note === 'string' ? b.note.trim().slice(0, NOTE_MAX) : '');
+
   // ---------- the bookshelf friends see on a profile: the books being read, the books read (newest first) with the
-  // reader's rating (1 to 5 stars) and favourites (f). Titles and authors are cut short; a very long list loses its oldest
-  // books that are not favourites, so it stays well under the server's 64 KB. lastRead = { bookId: 'YYYY-MM-DD' }.
+  // reader's score (s, 1 to 10), comment (c) and favourites (f). Titles and authors are cut short; a very long list loses its
+  // oldest books that are not favourites, so it stays well under the server's 64 KB. lastRead = { bookId: 'YYYY-MM-DD' }.
   const SHELF_BYTES = 40000;
   const isDay = k => typeof k === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(k);
   const bytes = x => { const j = JSON.stringify(x); return typeof TextEncoder !== 'undefined' ? new TextEncoder().encode(j).length : j.length * 2; };
@@ -152,7 +161,7 @@
     const one = b => {
       const x = { t: (String(b.title || '').trim() || 'Knjiga brez naslova').slice(0, 100) };
       if (b.author && String(b.author).trim()) x.a = String(b.author).trim().slice(0, 60);
-      if (b.status === 'finished' && b.rate >= 1 && b.rate <= 5) x.r = Math.round(b.rate);
+      if (b.status === 'finished') { const s = scoreOf(b), c = noteOf(b); if (s) x.s = s; if (c) x.c = c; }
       if (b.fav) x.f = 1;
       if (b.status === 'finished' && isDay(b.done)) x.d = b.done;
       return x;
@@ -160,7 +169,7 @@
     const reading = books.filter(b => b.status === 'reading')
       .sort((a, b) => (L[b.id] || b.added || '').localeCompare(L[a.id] || a.added || '')).slice(0, 50).map(one);
     const fin = books.filter(b => b.status === 'finished').sort((a, b) => (b.done || '').localeCompare(a.done || ''));
-    const out = { v: 1, reading, read: fin.map(one), n: fin.length };
+    const out = { v: 2, reading, read: fin.map(one), n: fin.length };
     while (bytes(out) > SHELF_BYTES) {
       let i = out.read.length - 1; while (i >= 0 && out.read[i].f) i--;
       if (i < 0) i = out.read.length - 1;
@@ -169,21 +178,21 @@
     }
     return out;
   }
-  // a friend's shelf comes from their phone through the server: keep only well-formed items
+  // a friend's shelf comes from their phone through the server: keep only well-formed items (an older phone may still send
+  // r, 1 to 5 stars, which counts double)
   function cleanShelf(x) {
     if (!x || typeof x !== 'object' || Array.isArray(x)) return null;
     const str = (v, n) => typeof v === 'string' && v.trim() ? v.trim().slice(0, n) : '';
     const item = y => {
       if (!y || typeof y !== 'object') return null;
       const t = str(y.t, 100); if (!t) return null;
-      const r = Math.round(Number(y.r));
-      return { t, a: str(y.a, 60), r: r >= 1 && r <= 5 ? r : 0, f: !!y.f, d: isDay(y.d) ? y.d : null };
+      return { t, a: str(y.a, 60), s: scoreOf({ score: y.s, rate: y.r }), c: str(y.c, NOTE_MAX), f: !!y.f, d: isDay(y.d) ? y.d : null };
     };
     const list = (v, n) => Array.isArray(v) ? v.slice(0, n).map(item).filter(Boolean) : [];
     const read = list(x.read, 2000), n = Math.floor(Number(x.n));
     return { reading: list(x.reading, 50), read, n: Number.isFinite(n) && n >= read.length ? Math.min(n, 1e5) : read.length };
   }
 
-  const RG = { LEVELS, MARK_EVERY, MARK_MAX, AWAY_ASK, AWAY_LONG, RULES, dayKey, keyDate, addDays, goalFor, dayTotals, streak, level, splitByDay, away, settle, bookTotals, longestRun, weekStart, weekPoints, shelfOf, cleanShelf };
+  const RG = { LEVELS, MARK_EVERY, MARK_MAX, AWAY_ASK, AWAY_LONG, RULES, dayKey, keyDate, addDays, goalFor, dayTotals, streak, level, splitByDay, away, settle, bookTotals, longestRun, weekStart, weekPoints, NOTE_MAX, scoreOf, noteOf, shelfOf, cleanShelf };
   if (typeof module !== 'undefined' && module.exports) module.exports = RG; else root.RG = RG;
 })(this);

@@ -510,36 +510,44 @@ main{max-width:560px; margin:0 auto; padding:calc(var(--top) + 28px) max(20px, e
 .fr-days b{font:var(--num-w) .9rem var(--num); color:var(--fg)}
 .fr-days .miss b{color:var(--mark)}
 .fr-days .future,.fr-days .before{opacity:.45}
-/* ratings (stars, finished books) and favourites (heart); --rate is the stars' amber */
-.stars{display:inline-flex; gap:1px; vertical-align:middle; color:var(--rate)}
-.stars i{display:block; width:13px; height:13px; line-height:0; color:var(--surface2)}
-.stars i.on{color:var(--rate)}
-.stars svg,.favmark svg{width:100%; height:100%; fill:currentColor}
+/* a finished book's score (1 to 10, amber --rate) and short comment; favourites (heart) */
+.score{display:inline-flex; align-items:center; gap:0; color:var(--rate); white-space:nowrap; vertical-align:middle; line-height:1}
+.score svg{width:13px; height:13px; fill:currentColor; flex:none; margin-right:3px}
+.score b{font:var(--num-w) .95rem var(--num); font-variant-numeric:tabular-nums}
+.score small{font-size:.72rem; color:var(--muted)}
+.note{font-style:italic; color:var(--muted); overflow-wrap:anywhere}
+.favmark svg{width:100%; height:100%; fill:currentColor}
 .favmark{display:inline-block; width:14px; height:14px; color:var(--mark); vertical-align:-1px; margin-left:6px; line-height:0}
-.shelf .stars{margin-top:-2px}
+.shelf .score{margin-top:-2px}
 .shelf-fav{position:absolute; top:8px; left:8px; display:grid; place-items:center; width:26px; height:26px; border-radius:50%; background:var(--surface); box-shadow:0 1px 3px rgba(0,0,0,.18)}
 .shelf-fav .favmark{margin:0}
-.rate{display:flex; gap:0}
-.rate button{display:grid; place-items:center; width:44px; height:44px; background:none; border:0; padding:0; border-radius:8px; color:var(--surface2); transition:transform .15s var(--ease)}
-.rate button svg{width:32px; height:32px; fill:currentColor}
-.rate button.on{color:var(--rate)}
-.rate button:active{transform:scale(.9)}
+.score-pick{display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:6px; width:100%}
+.score-pick button{min-height:44px; border:1px solid var(--line); background:var(--bg); border-radius:var(--r-sm); font:var(--num-w) 1.05rem var(--num); color:var(--fg); font-variant-numeric:tabular-nums; transition:transform .15s var(--ease), background .15s}
+.score-pick button.on{background:var(--rate); border-color:var(--rate); color:#fff}
+.score-pick button:active{transform:scale(.94)}
+.note-in textarea{font:inherit; font-weight:400; color:var(--fg); background:var(--bg); border:1px solid var(--line); border-radius:var(--r-sm); padding:11px 12px; min-height:48px; resize:none; width:100%; line-height:1.4}
+.note-in textarea:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft)}
 .favbtn{display:inline-flex; align-items:center; gap:8px; min-height:44px; background:none; border:1px solid var(--line); border-radius:var(--r-pill); padding:6px 16px 6px 12px; font-weight:650; color:var(--fg)}
 .favbtn svg{width:20px; height:20px; fill:none; stroke:var(--mark); stroke-width:2}
 .favbtn.on{background:var(--mark-soft); border-color:transparent; color:var(--mark)}
 .favbtn.on svg{fill:var(--mark)}
 .myrate{display:grid; gap:10px; justify-items:start}
-.myrate-row{display:flex; align-items:center; flex-wrap:wrap; gap:4px 10px}
-.myrate-row > span{font-size:.85rem; color:var(--muted); font-weight:600}
+.myrate h3,.finrate h3{display:flex; align-items:baseline; gap:8px; font-size:1rem}
+.myrate h3 span,.finrate h3 span{font-size:.8rem; font-weight:500; color:var(--muted)}
+.myrate .note-in{width:100%}
 .finrate{display:grid; gap:10px}
-.finrate h3{font-size:1rem}
-.finrate-pick{display:flex; flex-wrap:wrap; align-items:center; gap:10px 16px}
+.finrate-pick{display:grid; gap:10px; justify-items:start}
 .finrate .hint{margin-top:0}
 .party-rate{display:flex; align-items:center; gap:10px}
-.party .party-rate .stars i{width:22px; height:22px}
+.party .party-rate .score svg{width:22px; height:22px}
+.party .party-rate .score b{font-size:1.6rem}
+.party .party-rate .score small{font-size:.95rem}
 .party .party-rate .favmark{width:22px; height:22px; margin:0}
-.ev-rate{display:inline-flex; align-items:center; gap:4px; margin-left:6px; vertical-align:-2px}
+.party .party-note{max-width:30ch}
+.ev-rate{display:inline-flex; align-items:center; gap:4px; margin-left:6px; vertical-align:-1px}
 .ev-rate .favmark{margin-left:2px}
+.ev-note{display:block; margin-top:2px; font-size:.9rem}
+.bl-note{font-size:.82rem; margin-top:2px}
 /* a profile's books: reading now, favourites, read with ratings */
 .fr-books{display:grid; gap:8px}
 .fr-books h3{display:flex; align-items:baseline; gap:8px; font-family:var(--display); font-weight:var(--display-w); font-size:1.05rem; margin-top:6px}

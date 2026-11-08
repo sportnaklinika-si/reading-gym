@@ -135,8 +135,12 @@ const Club = (() => {
   }
   function finished(book) {
     const e = { t: 'book', v: bookName(book).slice(0, 120), d: today() };
-    if (shareTitle() && book.rate >= 1 && book.rate <= 5) e.r = Math.round(book.rate);
-    if (shareTitle() && book.fav) e.f = 1;
+    if (shareTitle()) {
+      const s = RG.scoreOf(book), c = RG.noteOf(book);
+      if (s) e.s = s;
+      if (book.fav) e.f = 1;
+      if (c) { e.c = c; while (JSON.stringify(e).length > 480 && e.c.length) e.c = e.c.slice(0, -10).trim(); if (!e.c) delete e.c; }   // the server takes 500
+    }
     event(e);
   }
 
@@ -240,14 +244,17 @@ const Club = (() => {
     switch (e.t) {
       case 'book': {
         if (typeof e.v !== 'string') return null;
-        const r = Math.round(Number(e.r)), rated = r >= 1 && r <= 5;
-        return [n + ' konča knjigo <i>' + esc(e.v.slice(0, 120)) + '</i>.' + (rated || e.f ? '<span class="ev-rate">' + (rated ? starsView(r) : '') + (e.f ? favMark(true) : '') + '</span>' : ''), 'book'];
+        const s = RG.scoreOf({ score: e.s, rate: e.r }), c = typeof e.c === 'string' ? e.c.trim().slice(0, RG.NOTE_MAX) : '';
+        return [n + ' konča knjigo <i>' + esc(e.v.slice(0, 120)) + '</i>.' + (s || e.f ? '<span class="ev-rate">' + scoreView(s) + (e.f ? favMark(true) : '') + '</span>' : '') + (c ? '<span class="ev-note">' + noteView(c) + '</span>' : ''), 'book'];
       }
       case 'level': return ok && v < RG.LEVELS.length ? [n + ' napreduje na stopnjo <i>' + esc(RG.LEVELS[v][1]) + '</i>.', 'level', v] : null;
       case 'streak': return ok ? [n + ' bere že ' + v + ' ' + plural(v, DAYS) + ' zapored.', 'streak'] : null;
     }
     return null;
   }
+
+  // an event as plain text for a reply's quote: the sentence only, without the score and the comment
+  const evPlain = m => (eventText(m) || [''])[0].split('<span class="ev-')[0].replace(/<[^>]+>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
 
   // ---------- drawing bits
   const SV = (p, extra) => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"${extra || ''}>${p}</svg>`;
@@ -342,10 +349,10 @@ const Club = (() => {
         const e = eventText(m); if (!e) return '';
         return `<div class="ev" data-kind="${e[1]}">${e[1] === 'level' ? `<span class="ev-kid">${KID(e[2], 34)}</span>` : EV_IC[e[1]] || ''}<p>${e[0]}<time>${ago(m.at)}</time></p><div class="msg-acts">${bravo}${reply}</div></div>`;
       }
-      const q = m.re ? byId[m.re] : null, qt = q ? (q.kind === 'event' ? ((eventText(q) || [''])[0].replace(/<[^>]+>/g, '')) : (q.name ? q.name + ': ' : '') + q.body) : m.re ? 'Starejše sporočilo' : '';
+      const q = m.re ? byId[m.re] : null, qt = q ? (q.kind === 'event' ? (evPlain(q)) : (q.name ? q.name + ': ' : '') + q.body) : m.re ? 'Starejše sporočilo' : '';
       return `<div class="msg${mineMsg ? ' mine' : ''}">${m.re ? `<p class="quote">${esc(qt.length > 90 ? qt.slice(0, 88) + '…' : qt)}</p>` : ''}<p class="msg-h"><b>${esc(m.name || GONE)}</b><time>${ago(m.at)}</time></p><p class="msg-b">${esc(m.body)}</p><div class="msg-acts">${bravo}${reply}${del}</div></div>`;
     };
-    const rq = ui.reply ? byId[ui.reply] : null, rqt = rq ? (rq.kind === 'event' ? ((eventText(rq) || [''])[0].replace(/<[^>]+>/g, '')) : (rq.name || '') + ': ' + rq.body) : '';
+    const rq = ui.reply ? byId[ui.reply] : null, rqt = rq ? (rq.kind === 'event' ? (evPlain(rq)) : (rq.name || '') + ': ' + rq.body) : '';
     return `<section class="panel fr-chat" id="fr-chat"><div class="head"><h2>Klepet</h2><span class="muted" style="font-size:.85rem">pohvale, priporočila, izzivi</span></div>
       ${f.length && ui.more !== 'end' && f.length >= 60 ? '<button class="link" data-act="fr-older">Starejša sporočila</button>' : ''}
       <div class="feed">${f.length ? f.map(one).join('') : `<p class="muted">${friendsN() ? 'Še tiho. Pohvali koga ali povej, kaj bereš.' : 'Tu bodo sporočila, prebrane knjige in nizi tvojih prijateljev.'}</p>`}</div>
@@ -489,7 +496,7 @@ const Club = (() => {
   const shelves = {}, shelfFail = {}, shelfAll = {};
   const SHOW = 10;
   const monthOf = k => { try { return RG.keyDate(k).toLocaleDateString('sl-SI', { month: 'short', year: 'numeric' }); } catch (e) { return k; } };
-  const bookRow = (x, withDate) => `<li><span class="bl-main"><b>${esc(x.t)}</b>${x.a ? `<small>${esc(x.a)}</small>` : ''}</span><span class="bl-side">${starsView(x.r)}${favMark(x.f)}${withDate && x.d ? `<small>${esc(monthOf(x.d))}</small>` : ''}</span></li>`;
+  const bookRow = (x, withDate) => `<li><span class="bl-main"><b>${esc(x.t)}</b>${x.a ? `<small>${esc(x.a)}</small>` : ''}${x.c ? `<span class="bl-note">${noteView(x.c)}</span>` : ''}</span><span class="bl-side">${scoreView(x.s)}${favMark(x.f)}${withDate && x.d ? `<small>${esc(monthOf(x.d))}</small>` : ''}</span></li>`;
   function shelfHtml(id) {
     const m = members().find(x => x.id === id); if (!m) return '';
     const mine = isMe(id), s = statsOf(m), who = esc(m.name);
@@ -698,15 +705,15 @@ const Club = (() => {
       { id: 9, who: M, owner: M, name: 'Marko', kind: 'msg', body: 'Ta teden vas ujamem. Nocoj berem do polnoči.', at: iso(1500e3), bravo: [] },
     ] };
     // their bookshelves (what a friend's phone would send)
-    const bk = (t, a, r, f, ago) => ({ t, a, r, f, d: ago == null ? undefined : RG.addDays(t0, -ago) }), t0 = t;
-    const anaRead = [['Alamut', 'Vladimir Bartol', 5, 1], ['Mož po imenu Ove', 'Fredrik Backman', 5], ['Čefurji raus!', 'Goran Vojnović', 4], ['Atomske navade', 'James Clear', 4],
-      ['1984', 'George Orwell', 5, 1], ['Hiša Marije Pomočnice', 'Ivan Cankar', 4], ['Veliki Gatsby', 'F. Scott Fitzgerald', 3], ['Sapiens', 'Yuval Noah Harari', 4],
-      ['Martin Krpan', 'Fran Levstik', 4], ['Jamica', 'Valentina Plaskan', 5], ['Ime rože', 'Umberto Eco', 3], ['Pod svobodnim soncem', 'Fran Saleški Finžgar', 4],
-      ['Dekameron', 'Giovanni Boccaccio', 2], ['Na klancu', 'Ivan Cankar', 4]].map((x, i) => bk(x[0], x[1], x[2], x[3], 9 + i * 23));
-    shelves[A] = RG.cleanShelf({ reading: [bk('Mali princ', 'Antoine de Saint-Exupéry', 0, 0), bk('Kafka na obrežju', 'Haruki Murakami', 0, 1)], read: anaRead, n: anaRead.length });
-    shelves[M] = RG.cleanShelf({ reading: [bk('Sapiens', 'Yuval Noah Harari')], read: [bk('Atomske navade', 'James Clear', 4, 0, 30), bk('Hobit', 'J. R. R. Tolkien', 5, 1, 80)], n: 2 });
-    shelves[P] = RG.cleanShelf({ reading: [bk('Igra prestolov', 'George R. R. Martin')], read: [bk('Alamut', 'Vladimir Bartol', 5, 1, 1)], n: 1 });
-    cache.feed[3].body = '{"t":"book","v":"Alamut","r":5,"f":1}';
+    const bk = (t, a, s, f, ago, c) => ({ t, a, s, f, c, d: ago == null ? undefined : RG.addDays(t0, -ago) }), t0 = t;
+    const anaRead = [['Alamut', 'Vladimir Bartol', 10, 1, 'Ena najboljših knjig, kar sem jih brala.'], ['Mož po imenu Ove', 'Fredrik Backman', 9, 0, 'Smejala sem se in jokala.'], ['Čefurji raus!', 'Goran Vojnović', 8],
+      ['Atomske navade', 'James Clear', 7, 0, 'Uporabno, a malo dolgovezno.'], ['1984', 'George Orwell', 10, 1], ['Hiša Marije Pomočnice', 'Ivan Cankar', 8], ['Veliki Gatsby', 'F. Scott Fitzgerald', 6],
+      ['Sapiens', 'Yuval Noah Harari', 8], ['Martin Krpan', 'Fran Levstik', 7], ['Jamica', 'Valentina Plaskan', 9], ['Ime rože', 'Umberto Eco', 5, 0, 'Prezahtevna zame.'], ['Pod svobodnim soncem', 'Fran Saleški Finžgar', 8],
+      ['Dekameron', 'Giovanni Boccaccio', 4], ['Na klancu', 'Ivan Cankar', 7]].map((x, i) => bk(x[0], x[1], x[2], x[3], 9 + i * 23, x[4]));
+    shelves[A] = RG.cleanShelf({ reading: [bk('Mali princ', 'Antoine de Saint-Exupéry'), bk('Kafka na obrežju', 'Haruki Murakami', 0, 1)], read: anaRead, n: anaRead.length });
+    shelves[M] = RG.cleanShelf({ reading: [bk('Sapiens', 'Yuval Noah Harari')], read: [bk('Atomske navade', 'James Clear', 8, 0, 30), bk('Hobit', 'J. R. R. Tolkien', 10, 1, 80, 'Še vedno moja najljubša pustolovščina.')], n: 2 });
+    shelves[P] = RG.cleanShelf({ reading: [bk('Igra prestolov', 'George R. R. Martin')], read: [bk('Alamut', 'Vladimir Bartol', 9, 1, 1, 'Konec me je čisto presenetil!')], n: 1 });
+    cache.feed[3].body = '{"t":"book","v":"Alamut","s":9,"f":1,"c":"Konec me je čisto presenetil!"}';
     if (/welcome/.test(hash)) { S.me = null; cache = EMPTY(); }
     if (/invite/.test(hash)) { S.me = null; cache = EMPTY(); ui.invite = 'R4T8WN3K'; ui.peek = { name: 'Ana' }; }
     if (/alone/.test(hash)) { cache.board.members = list.slice(0, 1); cache.info.friends = 0; cache.feed = cache.feed.filter(m => m.owner === J && m.who === J); }

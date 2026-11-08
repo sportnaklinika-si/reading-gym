@@ -20,13 +20,14 @@ forwards to the main address (old invite links keep their code).
   answers). The app also posts reading moments by itself: a finished book, a new level, a streak of 7/14/21/30/50/… days.
   You can delete your own messages and any comment in your own thread.
 - **Books on a profile** (Jan, 8. 11.): tapping a friend shows what they are reading now (every book), their favourites
-  and the books they have read, newest first, with their rating (1 to 5 stars). Finishing a book asks "Kako ti je bila
-  všeč?" (stars and a heart, both optional); the book's sheet changes them later, and Knjige has a *Najljubše* shelf. The
-  chat line for a finished book shows the rating. The phone sends this bookshelf (`RG.shelfOf` in `core.js`, up to 40 KB,
+  and the books they have read, newest first, with their score (1 to 10) and short comment. Finishing a book asks "Kako ti
+  je bila všeč?" (a score from 1 to 10, a comment up to 200 characters and a heart, all optional; Jan asked for 1 to 10 and
+  comments on 8. 11., replacing the first day's 5 stars, which now count double: `RG.scoreOf`); the book's sheet changes
+  them later, and Knjige has a *Najljubše* shelf. The chat line for a finished book shows the score and the comment. The phone sends this bookshelf (`RG.shelfOf` in `core.js`, up to 40 KB,
   oldest non-favourites dropped first) only when it changes, and a friend's phone fetches it (`bm_shelf`) only when the
   profile opens, so the board that every phone polls stays small. Books put aside are not shared.
 - **Privacy**: friends see the name, level, total time, minutes per day for the last three weeks, and the books (reading,
-  read with ratings, favourites). One switch in the settings hides all books. *Izbriši moj profil pri prijateljih* in Napredek deletes it all.
+  read with scores and comments, favourites). One switch in the settings hides all books. *Izbriši moj profil pri prijateljih* in Napredek deletes it all.
 
 ## Data safety
 - **Same data as the first version.** Both versions were on the same web address, so they always read and wrote the same
@@ -80,7 +81,7 @@ A Supabase project would work as well (its API address + `/rest/v1` and public k
 - The app against the local server: open `http://127.0.0.1:8765/#api=local` (and `http://localhost:8765/` as a second
   phone; different address, separate storage).
 - Demo screens (no server): `#demo-friends`, `#demo-friends-all`, `#demo-friends-alone`, `#demo-friends-add`, `#demo-chat`,
-  `#demo-member`, `#demo-club` (settings), `#demo-welcome`, `#demo-invite`, `#demo-today-club`, `#demo-backup`, `#demo-finish` (rating a finished book), `#demo-detail-done` (a rated favourite);
+  `#demo-member`, `#demo-club` (settings), `#demo-welcome`, `#demo-invite`, `#demo-today-club`, `#demo-backup`, `#demo-finish` (score and comment for a finished book), `#demo-detail-done` (a scored favourite);
   `test/shoot-friends.sh` screenshots them into `test/friends-*.png`.
 
 ## v2/
